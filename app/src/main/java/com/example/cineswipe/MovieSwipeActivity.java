@@ -44,7 +44,7 @@ public class MovieSwipeActivity extends AppCompatActivity {
         cardStackView.setAdapter(adapter);
 
         CardStackLayoutManager layoutManager = new CardStackLayoutManager(this);
-        layoutManager.setSwipeableMethod(SwipeableMethod.AutomaticAndManual);
+        layoutManager.setSwipeableMethod(SwipeableMethod.Manual);
         layoutManager.setStackFrom(StackFrom.None);
         layoutManager.setVisibleCount(3);
         layoutManager.setDirections(Arrays.asList(Direction.Right, Direction.Left));

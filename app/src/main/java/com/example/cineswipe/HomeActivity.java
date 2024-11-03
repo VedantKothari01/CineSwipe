@@ -1,10 +1,12 @@
 package com.example.cineswipe;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager;
@@ -22,9 +24,7 @@ import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private CardStackView cardStackView;
     private MovieCardAdapter movieCardAdapter;
-    private CardStackLayoutManager cardStackLayoutManager;
     private List<Movie> movieList;
     private static final String API_KEY = Constants.API_KEY;
 
@@ -33,20 +33,19 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        cardStackView = findViewById(R.id.cardStackView);
+        CardStackView cardStackView = findViewById(R.id.cardStackView);
         movieList = new ArrayList<>();
         movieCardAdapter = new MovieCardAdapter(this, movieList);
 
-        // Configure CardStackLayoutManager
-        cardStackLayoutManager = new CardStackLayoutManager(this);
+        CardStackLayoutManager cardStackLayoutManager = new CardStackLayoutManager(this);
         cardStackLayoutManager.setStackFrom(StackFrom.Top);
         cardStackLayoutManager.setVisibleCount(3);
         cardStackLayoutManager.setTranslationInterval(8.0f);
         cardStackLayoutManager.setScaleInterval(0.95f);
         cardStackLayoutManager.setSwipeThreshold(0.3f);
         cardStackLayoutManager.setMaxDegree(20.0f);
-        cardStackLayoutManager.setDirections(Direction.FREEDOM);
-        cardStackLayoutManager.setSwipeableMethod(SwipeableMethod.Automatic);
+        cardStackLayoutManager.setDirections(Direction.HORIZONTAL);
+        cardStackLayoutManager.setSwipeableMethod(SwipeableMethod.Manual);
         cardStackLayoutManager.setCanScrollHorizontal(true);
 
         cardStackView.setLayoutManager(cardStackLayoutManager);
@@ -73,8 +72,9 @@ public class HomeActivity extends AppCompatActivity {
         Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genreIds, 1);
 
         call.enqueue(new Callback<MovieResponse>() {
+            @SuppressLint("NotifyDataSetChanged")
             @Override
-            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+            public void onResponse(@NonNull Call<MovieResponse> call, Response<MovieResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     movieList.clear();
                     movieList.addAll(response.body().getMovies());

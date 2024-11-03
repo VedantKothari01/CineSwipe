@@ -7,36 +7,36 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="692dp"
         android:background="#121212"
         android:fillViewport="true">
 
         <RelativeLayout
+            android:id="@+id/main"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/main">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CineSwipe"
-                android:textSize="24sp"
-                android:textColor="#FFFFFF"
+                android:layout_centerHorizontal="true"
                 android:layout_marginTop="16dp"
-                android:layout_centerHorizontal="true" />
+                android:text="CineSwipe"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
 
             <!-- Popular Movies Header -->
             <TextView
                 android:id="@+id/tvPopularMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Popular Movies"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
                 android:layout_below="@id/tvTitle"
+                android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginStart="16dp" />
+                android:text="Popular Movies"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
             <!-- Popular Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -55,12 +55,12 @@
                 android:id="@+id/tvTrendingMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Trending Movies"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
                 android:layout_below="@id/recyclerViewPopularMovies"
+                android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginStart="16dp" />
+                android:text="Trending Movies"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
             <!-- Trending Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -79,12 +79,12 @@
                 android:id="@+id/tvTopRatedMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Top Rated Movies"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
                 android:layout_below="@id/recyclerViewTrendingMovies"
+                android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginStart="16dp" />
+                android:text="Top Rated Movies"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
             <!-- Top Rated Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -103,12 +103,12 @@
                 android:id="@+id/tvUpcomingMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Upcoming Movies"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
                 android:layout_below="@id/recyclerViewTopRatedMovies"
+                android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginStart="16dp" />
+                android:text="Upcoming Movies"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
             <!-- Upcoming Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
