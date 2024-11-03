@@ -1,0 +1,135 @@
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#121212"
+        android:fillViewport="true">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/main">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CineSwipe"
+                android:textSize="24sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="16dp"
+                android:layout_centerHorizontal="true" />
+
+            <!-- Popular Movies Header -->
+            <TextView
+                android:id="@+id/tvPopularMovies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Popular Movies"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:layout_below="@id/tvTitle"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp" />
+
+            <!-- Popular Movies RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewPopularMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvPopularMovies"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scrollbars="horizontal" />
+
+            <!-- Trending Movies Header -->
+            <TextView
+                android:id="@+id/tvTrendingMovies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trending Movies"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:layout_below="@id/recyclerViewPopularMovies"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp" />
+
+            <!-- Trending Movies RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewTrendingMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvTrendingMovies"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scrollbars="horizontal" />
+
+            <!-- Top Rated Movies Header -->
+            <TextView
+                android:id="@+id/tvTopRatedMovies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Top Rated Movies"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:layout_below="@id/recyclerViewTrendingMovies"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp" />
+
+            <!-- Top Rated Movies RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewTopRatedMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvTopRatedMovies"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scrollbars="horizontal" />
+
+            <!-- Upcoming Movies Header -->
+            <TextView
+                android:id="@+id/tvUpcomingMovies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Upcoming Movies"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:layout_below="@id/recyclerViewTopRatedMovies"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp" />
+
+            <!-- Upcoming Movies RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewUpcomingMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvUpcomingMovies"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scrollbars="horizontal" />
+        </RelativeLayout>
+    </ScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:menu="@menu/bottom_navigation_menu"
+        app:itemIconTint="@color/selector_color" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
