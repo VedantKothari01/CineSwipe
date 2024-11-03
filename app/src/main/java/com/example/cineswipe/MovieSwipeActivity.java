@@ -26,7 +26,7 @@ import retrofit2.Response;
 public class MovieSwipeActivity extends AppCompatActivity {
 
     private CardStackView cardStackView;
-    private MovieCardAdapter adapter;
+    private MovieHorizontalAdapter adapter;
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private final String API_KEY = Constants.API_KEY;
@@ -40,7 +40,7 @@ public class MovieSwipeActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         cardStackView = findViewById(R.id.cardStackView);
-        adapter = new MovieCardAdapter(this, new ArrayList<>());
+        adapter = new MovieHorizontalAdapter(this, new ArrayList<>());
         cardStackView.setAdapter(adapter);
 
         CardStackLayoutManager layoutManager = new CardStackLayoutManager(this);

@@ -19,7 +19,7 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewPopularMovies, recyclerViewTrendingMovies, recyclerViewTopRatedMovies, recyclerViewUpcomingMovies;
-    private MovieCardAdapter popularMovieCardAdapter, trendingMovieCardAdapter, topRatedMovieCardAdapter, upcomingMovieCardAdapter;
+    private MovieHorizontalAdapter popularMovieHorizontalAdapter, trendingMovieHorizontalAdapter, topRatedMovieHorizontalAdapter, upcomingMovieHorizontalAdapter;
     private List<Movie> popularMovieList, trendingMovieList, topRatedMovieList, upcomingMovieList;
 
     @Override
@@ -51,10 +51,10 @@ public class MainActivity extends AppCompatActivity {
         upcomingMovieList = new ArrayList<>();
 
         // Initialize adapters
-        popularMovieCardAdapter = new MovieCardAdapter(this, popularMovieList);
-        trendingMovieCardAdapter = new MovieCardAdapter(this, trendingMovieList);
-        topRatedMovieCardAdapter = new MovieCardAdapter(this, topRatedMovieList);
-        upcomingMovieCardAdapter = new MovieCardAdapter(this, upcomingMovieList);
+        popularMovieHorizontalAdapter = new MovieHorizontalAdapter(this, popularMovieList);
+        trendingMovieHorizontalAdapter = new MovieHorizontalAdapter(this, trendingMovieList);
+        topRatedMovieHorizontalAdapter = new MovieHorizontalAdapter(this, topRatedMovieList);
+        upcomingMovieHorizontalAdapter = new MovieHorizontalAdapter(this, upcomingMovieList);
 
         // Define item spacing for RecyclerViews
         int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.movie_card_spacing);
@@ -66,13 +66,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Set layout managers
         recyclerViewPopularMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerViewPopularMovies.setAdapter(popularMovieCardAdapter);
+        recyclerViewPopularMovies.setAdapter(popularMovieHorizontalAdapter);
         recyclerViewTrendingMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerViewTrendingMovies.setAdapter(trendingMovieCardAdapter);
+        recyclerViewTrendingMovies.setAdapter(trendingMovieHorizontalAdapter);
         recyclerViewTopRatedMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerViewTopRatedMovies.setAdapter(topRatedMovieCardAdapter);
+        recyclerViewTopRatedMovies.setAdapter(topRatedMovieHorizontalAdapter);
         recyclerViewUpcomingMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerViewUpcomingMovies.setAdapter(upcomingMovieCardAdapter);
+        recyclerViewUpcomingMovies.setAdapter(upcomingMovieHorizontalAdapter);
 
         // Fetch movies for each category
         fetchPopularMovies();
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     popularMovieList.clear();
                     popularMovieList.addAll(response.body().getMovies());
-                    popularMovieCardAdapter.notifyDataSetChanged();
+                    popularMovieHorizontalAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(MainActivity.this, "Failed to fetch popular movies", Toast.LENGTH_SHORT).show();
                 }
@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     trendingMovieList.clear();
                     trendingMovieList.addAll(response.body().getMovies());
-                    trendingMovieCardAdapter.notifyDataSetChanged();
+                    trendingMovieHorizontalAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(MainActivity.this, "Failed to fetch trending movies", Toast.LENGTH_SHORT).show();
                 }
@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     topRatedMovieList.clear();
                     topRatedMovieList.addAll(response.body().getMovies());
-                    topRatedMovieCardAdapter.notifyDataSetChanged();
+                    topRatedMovieHorizontalAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(MainActivity.this, "Failed to fetch top-rated movies", Toast.LENGTH_SHORT).show();
                 }
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     upcomingMovieList.clear();
                     upcomingMovieList.addAll(response.body().getMovies());
-                    upcomingMovieCardAdapter.notifyDataSetChanged();
+                    upcomingMovieHorizontalAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(MainActivity.this, "Failed to fetch upcoming movies", Toast.LENGTH_SHORT).show();
                 }
