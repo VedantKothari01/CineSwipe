@@ -10,10 +10,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.Objects;
+
 public class SignUpActivity extends AppCompatActivity {
 
     private EditText nameInput, emailInput, passwordInput, confirmPasswordInput;
-    private Button signUpButton;
     private FirebaseAuth auth;
 
     @Override
@@ -27,7 +28,7 @@ public class SignUpActivity extends AppCompatActivity {
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput);
-        signUpButton = findViewById(R.id.signUpButton);
+        Button signUpButton = findViewById(R.id.signUpButton);
 
         signUpButton.setOnClickListener(v -> createUser());
     }
@@ -53,11 +54,11 @@ public class SignUpActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         // Redirect to LoginActivity after successful registration
-                        Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
+                        Intent intent = new Intent(SignUpActivity.this, GenreSelectionActivity.class);
                         startActivity(intent);
                         finish();
                     } else {
-                        Toast.makeText(SignUpActivity.this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SignUpActivity.this, "Registration Failed: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
