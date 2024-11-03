@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                 recyclerViewPopularMovies.smoothScrollToPosition(0);
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(MainActivity.this, MovieSwipeActivity.class));
+                startActivity(new Intent(MainActivity.this, GenreSelectionActivity.class));
                 return true;
             }
             return false;

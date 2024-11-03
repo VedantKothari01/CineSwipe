@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +21,7 @@ public class GenreSelectionActivity extends AppCompatActivity {
 
     private DatabaseReference databaseReference;
     private List<String> selectedGenres;
+    private Button saveButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,18 +35,11 @@ public class GenreSelectionActivity extends AppCompatActivity {
         LinearLayout genreLayout = findViewById(R.id.genreLayout);
         String[] genres = {"Action", "Comedy", "Drama", "Horror", "Romance"};
 
-        // Title TextView
-        TextView titleTextView = new TextView(this);
-        titleTextView.setText("Select Your Favorite Genres");
-        titleTextView.setTextColor(getResources().getColor(R.color.white));
-        titleTextView.setTextSize(24);
-        titleTextView.setPadding(0, 0, 0, 16);
-        genreLayout.addView(titleTextView);
-
         // Create CheckBoxes for each genre
         for (String genre : genres) {
             CheckBox checkBox = new CheckBox(this);
             checkBox.setText(genre);
+            checkBox.setTextSize(16);
             checkBox.setTextColor(getResources().getColor(R.color.white));
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
@@ -58,13 +51,8 @@ public class GenreSelectionActivity extends AppCompatActivity {
             genreLayout.addView(checkBox);
         }
 
-        // Save button to store selected genres
-        Button saveButton = new Button(this);
-        saveButton.setText("Save Genres");
-        saveButton.setBackgroundColor(getResources().getColor(R.color.accentColor));
-        saveButton.setTextColor(getResources().getColor(R.color.white));
+        saveButton = findViewById(R.id.saveButton);
         saveButton.setOnClickListener(v -> saveGenres());
-        genreLayout.addView(saveButton);
     }
 
     private String getCurrentUserId() {
