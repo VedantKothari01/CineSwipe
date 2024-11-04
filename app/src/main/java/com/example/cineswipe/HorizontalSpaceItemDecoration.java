@@ -15,7 +15,7 @@ public class HorizontalSpaceItemDecoration extends RecyclerView.ItemDecoration {
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
         outRect.right = space;
-        // Add left spacing only for the first item
+
         if (parent.getChildAdapterPosition(view) == 0) {
             outRect.left = space;
         }

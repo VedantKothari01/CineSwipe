@@ -43,7 +43,7 @@ public interface ApiService {
     @GET("discover/movie")
     Call<MovieResponse> getMoviesByGenres(
             @Query("api_key") String apiKey,
-            @Query("with_genres") String genres,  // Comma-separated genre IDs
+            @Query("with_genres") String genres,
             @Query("page") int page
     );
 

@@ -65,7 +65,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
         movieList = new ArrayList<>();
         movieCardAdapter = new MovieCardAdapter(this, movieList);
 
-        // Configure the card stack manager
+        //the card stack manager config
         manager.setStackFrom(StackFrom.Top);
         manager.setVisibleCount(3);
         manager.setTranslationInterval(8.0f);
@@ -88,35 +88,31 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
 
         ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
 
-        // Handle single genre case
+        //Handle single genre case
         if (genres.size() == 1) {
             Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genres.get(0), page);
             fetchMoviesForGenres(call);
             return;
         }
 
-        // Handle multiple genres case
-        // Create genre pairs for more diverse results
         List<String> genreCombinations = new ArrayList<>();
 
-        // Add individual genres first
         genreCombinations.addAll(genres);
 
-        // Then add pairs for more variety
         for (int i = 0; i < genres.size(); i++) {
             for (int j = i + 1; j < genres.size(); j++) {
                 genreCombinations.add(genres.get(i) + "," + genres.get(j));
             }
         }
 
-        // Fetch movies for each genre combination
+        //Fetch movies for each genre combination
         for (String genreCombination : genreCombinations) {
             Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genreCombination, page);
             fetchMoviesForGenres(call);
         }
     }
 
-    // Helper method to handle the API call and response
+    //Helper method to handle the API call and response
     private void fetchMoviesForGenres(Call<MovieResponse> call) {
         call.enqueue(new Callback<MovieResponse>() {
             @Override
@@ -124,7 +120,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
                 if (response.isSuccessful() && response.body() != null) {
                     List<Movie> newMovies = response.body().getMovies();
                     for (Movie movie : newMovies) {
-                        // Check if the movie ID has already been added
+
                         if (!addedMovieIds.contains(movie.getId())) {
                             addedMovieIds.add(movie.getId());
                             movieCardAdapter.addMovie(movie);
@@ -146,7 +142,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     private void fetchRandomMovies(int page) {
         ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
 
-        // Get a random sorting method
+        //Get a random sorting method
         String[] sortingMethods = {
                 "popularity.desc",
                 "revenue.desc",
@@ -163,7 +159,6 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
             public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Movie> newMovies = response.body().getMovies();
-                    // Shuffle the movies list for additional randomness
                     Collections.shuffle(newMovies);
                     movieCardAdapter.addMovies(newMovies);
                     Log.d(TAG, "Fetched " + newMovies.size() + " random movies");
@@ -183,14 +178,10 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
 
 
     @Override
-    public void onCardDragging(Direction direction, float ratio) {
-
-    }
+    public void onCardDragging(Direction direction, float ratio) {}
 
     @Override
     public void onCardSwiped(Direction direction) {
-        Log.d(TAG, "onCardSwiped: p=" + manager.getTopPosition() + " d=" + direction);
-
         if (direction == Direction.Right) {
             int currentMovieIndex = manager.getTopPosition() - 1;
             if (currentMovieIndex >= 0 && currentMovieIndex < movieList.size()) {
@@ -216,7 +207,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(userId)
-                .update("likedMovies", FieldValue.arrayUnion(movie.getId())) // Store movie ID
+                .update("likedMovies", FieldValue.arrayUnion(movie.getId()))
                 .addOnSuccessListener(aVoid -> Log.d(TAG, "Liked movie added successfully"))
                 .addOnFailureListener(e -> Log.e(TAG, "Error adding liked movie", e));
     }
@@ -235,7 +226,6 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     public void onCardAppeared(View view, int position) {
         Log.d(TAG, "onCardAppeared: " + position);
     }
-
     @Override
     public void onCardDisappeared(View view, int position) {
         Log.d(TAG, "onCardDisappeared: " + position);

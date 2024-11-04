@@ -31,7 +31,6 @@ public class GenreSelectionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_genre_selection);
 
-        // Initialize components
         initializeComponents();
 
         Button saveButton = findViewById(R.id.saveButton);
@@ -40,17 +39,14 @@ public class GenreSelectionActivity extends AppCompatActivity {
                 saveGenres();
             }
         });
-
         fetchUserGenres();
     }
-
     private void initializeComponents() {
         databaseHelper = new DatabaseHelper();
-        selectedGenreIds = new HashSet<>(); // Using HashSet for unique values
+        selectedGenreIds = new HashSet<>();
         genreLayout = findViewById(R.id.genreLayout);
         apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
 
-        // Fetch genres from API
         fetchGenresFromApi();
     }
 
@@ -119,15 +115,15 @@ public class GenreSelectionActivity extends AppCompatActivity {
     }
 
     private void displayGenres(List<GenreResponse.Genre> genres) {
-        genreLayout.removeAllViews(); // Clear existing views
+        genreLayout.removeAllViews();
         for (GenreResponse.Genre genre : genres) {
             CheckBox checkBox = new CheckBox(this);
             checkBox.setText(genre.getName());
             checkBox.setTextSize(16);
             checkBox.setTextColor(getResources().getColor(R.color.white));
-            checkBox.setTag(genre.getId()); // Store genre ID as tag
+            checkBox.setTag(genre.getId());
 
-            // Set initial state based on previously selected genres
+            //Set initial state based on previously selected genres
             checkBox.setChecked(selectedGenreIds.contains(genre.getId()));
 
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -146,19 +142,18 @@ public class GenreSelectionActivity extends AppCompatActivity {
         String userId = getCurrentUserId();
         if (userId == null) return;
 
-        isSaving = true; // Set saving flag
+        isSaving = true;
 
-        // Convert Set to List for saving
         List<Integer> genresList = new ArrayList<>(selectedGenreIds);
 
         databaseHelper.saveGenres(userId, genresList, new DatabaseHelper.OnDataSaveListener() {
             @Override
             public void onSuccess() {
-                isSaving = false; // Reset saving flag
+                isSaving = false;
                 Toast.makeText(GenreSelectionActivity.this,
                         "Preferences updated successfully!", Toast.LENGTH_SHORT).show();
 
-                // Pass selected genres to HomeActivity
+                //Pass selected genres to HomeActivity
                 Intent intent = new Intent(GenreSelectionActivity.this, HomeActivity.class);
                 ArrayList<String> genreIdStrings = new ArrayList<>();
                 for (Integer genreId : selectedGenreIds) {
@@ -184,6 +179,5 @@ public class GenreSelectionActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Clean up any remaining callbacks or listeners if necessary
     }
 }

@@ -55,10 +55,10 @@ public class MovieHorizontalAdapter extends RecyclerView.Adapter<MovieHorizontal
 
     @Override
     public int getItemCount() {
-        return movieList.size(); // Return the size of the movie list
+        return movieList.size();
     }
 
-    // Method to update the movie list using DiffUtil
+    //Method to update the movie list using DiffUtil
     public void setMovies(List<Movie> newMovies) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new MovieDiffCallback(movieList, newMovies));
         movieList.clear();

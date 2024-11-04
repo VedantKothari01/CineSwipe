@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:background="#121212"
         android:fillViewport="true"
-        android:paddingBottom="64dp">
+        android:paddingBottom="60dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -36,9 +36,12 @@
                 android:layout_marginTop="16dp"
                 android:text="Popular Movies"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Popular Movies RecyclerView -->
+
+            <!-- Trending Movies Header -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewPopularMovies"
                 android:layout_width="match_parent"
@@ -49,7 +52,6 @@
                 android:paddingEnd="16dp"
                 android:scrollbars="horizontal" />
 
-            <!-- Trending Movies Header -->
             <TextView
                 android:id="@+id/tvTrendingMovies"
                 android:layout_width="wrap_content"
@@ -58,7 +60,8 @@
                 android:layout_marginTop="16dp"
                 android:text="Trending Movies"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Trending Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -78,9 +81,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="Top Rated Movies"
+                android:text="IMDB Top Rated Movies"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Top Rated Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -102,7 +106,8 @@
                 android:layout_marginTop="16dp"
                 android:text="Upcoming Movies"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Upcoming Movies RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView

@@ -7,9 +7,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.auth.FirebaseAuth;
-
 import java.util.Objects;
 
 public class SignUpActivity extends AppCompatActivity {
@@ -39,7 +37,7 @@ public class SignUpActivity extends AppCompatActivity {
         String password = passwordInput.getText().toString().trim();
         String confirmPassword = confirmPasswordInput.getText().toString().trim();
 
-        // Validate input
+        //Validate input
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             Toast.makeText(SignUpActivity.this, "All fields must be filled.", Toast.LENGTH_SHORT).show();
             return;
@@ -53,7 +51,8 @@ public class SignUpActivity extends AppCompatActivity {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Redirect to LoginActivity after successful registration
+                        //Redirect to LoginActivity after successful registration
+                        Toast.makeText(SignUpActivity.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(SignUpActivity.this, GenreSelectionActivity.class);
                         startActivity(intent);
                         finish();

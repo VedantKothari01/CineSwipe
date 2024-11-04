@@ -24,25 +24,24 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Initialize FirebaseAuth and DatabaseReference
+        //Initialize FirebaseAuth and DatabaseReference
         auth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference("Users");
 
-        // Check if a user is already logged in
+        //Check if a user is already logged in
         if (auth.getCurrentUser() != null) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
-            return; // Prevent further execution if user is logged in
+            return;
         }
 
-        // Initialize UI elements
+        //Initialize UI elements
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
         loginButton = findViewById(R.id.loginButton);
         signUpButton = findViewById(R.id.signUpButton);
 
-        // Set button listeners
         loginButton.setOnClickListener(v -> loginUser());
         signUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
@@ -70,24 +69,5 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
 
-    }
-
-    private void createUser() {
-        String email = emailInput.getText().toString().trim();
-        String password = passwordInput.getText().toString().trim();
-
-        if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(LoginActivity.this, "Please enter both email and password.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Handle successful user creation here
-                    } else {
-                        Toast.makeText(LoginActivity.this, "User creation failed.", Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 }

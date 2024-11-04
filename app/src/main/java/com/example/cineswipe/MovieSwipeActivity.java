@@ -35,7 +35,7 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     private FirebaseAuth auth;
     private final String API_KEY = Constants.API_KEY;
     private List<Movie> likedMovies = new ArrayList<>();
-    // Add pagination variables
+
     private int currentPage = 1;
     private boolean isLoading = false;
     private List<String> userGenres;
@@ -58,6 +58,7 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     }
 
     private void setupCardStackView() {
+
         layoutManager = new CardStackLayoutManager(this, this);
         layoutManager.setSwipeableMethod(SwipeableMethod.AutomaticAndManual);
         layoutManager.setStackFrom(StackFrom.Top);
@@ -199,7 +200,7 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    // CardStackListener implementation
+    //CardStackListener implementation
     @Override
     public void onCardDragging(Direction direction, float ratio) {
         Log.d(TAG, "onCardDragging: d=" + direction.name() + " ratio=" + ratio);
@@ -221,14 +222,14 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
             Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
         }
 
-        // Load more movies when reaching the end
+        //Load more movies when reaching the end
         if (layoutManager.getTopPosition() >= adapter.getItemCount() - 5) {
             loadMoreMovies();
         }
     }
 
     private void saveLikedMovie(Movie movie) {
-        // Save the liked movie to Firestore
+        //Save the liked movie to Firestore
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(userId)

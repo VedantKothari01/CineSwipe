@@ -17,7 +17,6 @@ public class DatabaseHelper {
     private static DatabaseHelper instance;
 
     public DatabaseHelper() {
-        // Initialize Firebase Database with specific URL for Asia region
         FirebaseDatabase database = FirebaseDatabase.getInstance(DATABASE_URL);
         try {
             database.setPersistenceEnabled(true);
@@ -28,35 +27,12 @@ public class DatabaseHelper {
         Log.d(TAG, "DatabaseHelper initialized with reference: " + databaseReference.toString());
     }
 
-    // Singleton pattern to ensure we don't enable persistence multiple times
+
     public static synchronized DatabaseHelper getInstance() {
         if (instance == null) {
             instance = new DatabaseHelper();
         }
         return instance;
-    }
-
-    public void saveUserPreferences(UserPreferences preferences, OnDataSaveListener listener) {
-        if (preferences.getUserId() == null || preferences.getUserId().isEmpty()) {
-            Log.e(TAG, "User ID is null or empty");
-            listener.onFailure(new Exception("User ID cannot be null or empty"));
-            return;
-        }
-
-        Log.d(TAG, "Attempting to save preferences for user: " + preferences.getUserId());
-
-        DatabaseReference userRef = databaseReference.child("users")
-                .child(preferences.getUserId());
-
-        userRef.setValue(preferences)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully saved user preferences");
-                    listener.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to save user preferences", e);
-                    listener.onFailure(e);
-                });
     }
 
     public void saveGenres(String userId, List<Integer> genres, OnDataSaveListener listener) {
@@ -65,7 +41,6 @@ public class DatabaseHelper {
             return;
         }
 
-        // Allow empty genre list - user might want to reset their preferences
         if (genres == null) {
             genres = new ArrayList<>();
         }
@@ -150,24 +125,4 @@ public class DatabaseHelper {
         void onError(Exception e);
     }
 
-    // Helper method to keep database connection alive
-    public void keepConnectionAlive() {
-        DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
-        connectedRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Boolean connected = snapshot.getValue(Boolean.class);
-                if (connected != null && connected) {
-                    Log.d(TAG, "Connected to Firebase Database");
-                } else {
-                    Log.d(TAG, "Disconnected from Firebase Database");
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.w(TAG, "Listener was cancelled", error.toException());
-            }
-        });
-    }
 }

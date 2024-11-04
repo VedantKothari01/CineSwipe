@@ -42,15 +42,12 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
     public void onBindViewHolder(@NonNull MovieViewHolder holder, int position) {
         Movie movie = movieList.get(position);
 
-        // Set movie title
         holder.movieTitle.setText(movie.getTitle());
 
-        // Set movie description/overview
         if (holder.movieDescription != null && movie.getOverview() != null) {
             holder.movieDescription.setText(movie.getOverview());
         }
 
-        // Load poster image with Glide
         RequestOptions requestOptions = new RequestOptions()
                 .transforms(new CenterCrop(), new RoundedCorners(16));
         Glide.with(context)
@@ -83,7 +80,6 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         notifyItemRangeInserted(startIndex, newMovies.size());
     }
 
-    // Method to get the movie at a specific index
     public Movie getMovieAt(int currentMovieIndex) {
         if (currentMovieIndex >= 0 && currentMovieIndex < movieList.size()) {
             return movieList.get(currentMovieIndex);

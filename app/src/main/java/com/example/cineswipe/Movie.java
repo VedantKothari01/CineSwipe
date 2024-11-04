@@ -34,7 +34,6 @@ public class Movie implements Serializable {
         this.cast = cast;
     }
 
-    // Getters
     public String getId() {
         return id;
     }
@@ -125,7 +124,7 @@ public class Movie implements Serializable {
     }
 }
 
-// Genre class for holding genre information
+//Genre class for holding genre information
 class Genre {
     private int id;
     private String name;
@@ -140,7 +139,7 @@ class Genre {
     }
 }
 
-// CastMember class for holding cast member information
+//CastMember class for holding cast member information
 class CastMember {
     private String name;
 

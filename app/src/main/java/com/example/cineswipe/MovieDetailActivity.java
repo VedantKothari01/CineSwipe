@@ -27,7 +27,6 @@ public class MovieDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
 
-        // Initialize views
         progressBar = findViewById(R.id.progressBar);
         contentLayout = findViewById(R.id.contentLayout);
 
@@ -35,16 +34,15 @@ public class MovieDetailActivity extends AppCompatActivity {
         currentMovie = (Movie) intent.getSerializableExtra("MOVIE_DATA");
 
         if (currentMovie != null) {
-            // Show loading state
             progressBar.setVisibility(View.VISIBLE);
             contentLayout.setVisibility(View.GONE);
 
-            // Initialize API service using your existing ApiClient
             apiService = ApiClient.getClient().create(ApiService.class);
 
-            // Fetch complete movie details
+            //Fetch complete movie details
             fetchMovieDetails(currentMovie.getId());
-            // Fetch cast separately
+
+            //Fetch cast separately
             fetchMovieCredits(currentMovie.getId());
         }
     }
@@ -69,10 +67,9 @@ public class MovieDetailActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Movie> call, Throwable t) {
-                // Handle error
+
                 progressBar.setVisibility(View.GONE);
                 contentLayout.setVisibility(View.VISIBLE);
-                // You might want to show an error message here
             }
         });
     }
@@ -112,7 +109,7 @@ public class MovieDetailActivity extends AppCompatActivity {
     }
 
     private void updateUI(Movie movie) {
-        // Load backdrop with animation
+
         ImageView backdropImageView = findViewById(R.id.backdropImageView);
         if (movie.getBackdropUrl() != null) {
             Glide.with(this)
@@ -121,7 +118,6 @@ public class MovieDetailActivity extends AppCompatActivity {
                     .into(backdropImageView);
         }
 
-        // Update text views
         TextView titleView = findViewById(R.id.movieTitleTextView);
         TextView ratingView = findViewById(R.id.ratingTextView);
         TextView releaseDateView = findViewById(R.id.releaseDateTextView);

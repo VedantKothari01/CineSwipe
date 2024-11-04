@@ -22,11 +22,14 @@
             android:id="@+id/movieTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
             android:padding="8dp"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>
