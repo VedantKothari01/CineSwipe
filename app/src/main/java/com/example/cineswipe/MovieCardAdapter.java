@@ -67,6 +67,16 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         return movieList.size();
     }
 
+    public Movie getMovieAt(int position) {
+        return movieList.get(position);
+    }
+
+    public void addMovies(List<Movie> newMovies) {
+        int startPosition = movieList.size();
+        movieList.addAll(newMovies);
+        notifyItemRangeInserted(startPosition, newMovies.size());
+    }
+
     public void setMovies(List<Movie> movies) {
         this.movieList = movies;
         notifyDataSetChanged();

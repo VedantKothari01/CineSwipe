@@ -33,6 +33,11 @@ public interface ApiService {
             @Query("page") int page
     );
 
+    @GET("genre/movie/list")
+    Call<GenreResponse> getGenres(
+            @Query("api_key") String apiKey,
+            @Query("language") String language
+    );
     @GET("discover/movie")
     Call<MovieResponse> getMoviesByGenres(
             @Query("api_key") String apiKey,
@@ -40,10 +45,5 @@ public interface ApiService {
             @Query("page") int page
     );
 
-    @GET("genre/movie/list")
-    Call<GenreResponse> getGenres(
-            @Query("api_key") String apiKey,
-            @Query("language") String language
-    );
 
 }

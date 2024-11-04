@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager;
 import com.yuyakaido.android.cardstackview.CardStackListener;
 import com.yuyakaido.android.cardstackview.CardStackView;
@@ -25,41 +26,33 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class HomeActivity extends AppCompatActivity implements CardStackListener {
 
+public class HomeActivity extends AppCompatActivity implements CardStackListener {
+    private static final String TAG = "HomeActivity";
     private CardStackView cardStackView;
     private CardStackLayoutManager manager;
     private MovieCardAdapter movieCardAdapter;
-    private List<Movie> movieList;
-    private static final String API_KEY = Constants.API_KEY;
-    private static final String TAG = "HomeActivity";
+    private MovieRecommendationSystem recommendationSystem;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        initializeCardStackView();
+        apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        recommendationSystem = new MovieRecommendationSystem(userId, apiService);
 
-        // Fetch and display movies based on genres
-        Intent intent = getIntent();
-        List<String> userGenres = intent.getStringArrayListExtra("USER_GENRES");
-        if (userGenres != null) {
-            fetchMoviesByGenres(userGenres);
-        } else {
-            Log.e(TAG, "No genres provided for fetching movies.");
-            // Fallback to popular movies if no genres are provided
-            fetchPopularMovies();
-        }
+        initializeCardStackView();
+        loadInitialMovies();
     }
 
     private void initializeCardStackView() {
         cardStackView = findViewById(R.id.cardStackView);
         manager = new CardStackLayoutManager(this, this);
-        movieList = new ArrayList<>();
-        movieCardAdapter = new MovieCardAdapter(this, movieList);
+        movieCardAdapter = new MovieCardAdapter(this, new ArrayList<>());
 
-        // Configure the card stack manager
         manager.setStackFrom(StackFrom.Top);
         manager.setVisibleCount(3);
         manager.setTranslationInterval(8.0f);
@@ -74,62 +67,51 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
         cardStackView.setAdapter(movieCardAdapter);
     }
 
-    private void fetchMoviesByGenres(List<String> genres) {
-        if (genres == null || genres.isEmpty()) {
-            Log.e(TAG, "No genres provided for fetching movies.");
-            return;
-        }
-
-        String genreIds = TextUtils.join(",", genres);
-        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genreIds, 1);
-
-        call.enqueue(new Callback<MovieResponse>() {
-            @SuppressLint("NotifyDataSetChanged")
+    private void loadInitialMovies() {
+        recommendationSystem.fetchNextBatch(new MovieRecommendationSystem.OnMoviesBatchReadyListener() {
             @Override
-            public void onResponse(@NonNull Call<MovieResponse> call, Response<MovieResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    movieList.clear();
-                    movieList.addAll(response.body().getMovies());
-                    movieCardAdapter.notifyDataSetChanged();
-                    Log.d(TAG, "Fetched " + movieList.size() + " movies");
-                } else {
-                    Log.e(TAG, "Error fetching movies: " + response.code() + " - " + response.message());
-                    Toast.makeText(HomeActivity.this, "Failed to fetch movies", Toast.LENGTH_SHORT).show();
-                }
+            public void onMoviesBatchReady(List<Movie> movies) {
+                movieCardAdapter.setMovies(movies);
             }
 
             @Override
-            public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Log.e(TAG, "Network call failed: " + t.getMessage());
-                Toast.makeText(HomeActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onError(String message) {
+                Toast.makeText(HomeActivity.this, "Error: " + message, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void fetchPopularMovies() {
-        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", 1);
+    @Override
+    public void onCardSwiped(Direction direction) {
+        int position = manager.getTopPosition() - 1;
+        Movie swipedMovie = movieCardAdapter.getMovieAt(position);
+        boolean isLiked = direction == Direction.Right;
 
-        call.enqueue(new Callback<MovieResponse>() {
-            @SuppressLint("NotifyDataSetChanged")
+        // Update recommendations based on swipe
+        recommendationSystem.handleSwipe(swipedMovie, isLiked);
+
+        // Show appropriate toast
+        if (isLiked) {
+            Toast.makeText(this, "Added to favorites!", Toast.LENGTH_SHORT).show();
+        }
+
+        // Check if we need to load more movies
+        if (manager.getTopPosition() >= movieCardAdapter.getItemCount() - 5) {
+            loadMoreMovies();
+        }
+    }
+
+    private void loadMoreMovies() {
+        recommendationSystem.fetchNextBatch(new MovieRecommendationSystem.OnMoviesBatchReadyListener() {
             @Override
-            public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    movieList.clear();
-                    movieList.addAll(response.body().getMovies());
-                    movieCardAdapter.notifyDataSetChanged();
-                    Log.d(TAG, "Fetched " + movieList.size() + " popular movies");
-                } else {
-                    Log.e(TAG, "Error fetching popular movies: " + response.code());
-                    Toast.makeText(HomeActivity.this, "Failed to fetch movies", Toast.LENGTH_SHORT).show();
-                }
+            public void onMoviesBatchReady(List<Movie> movies) {
+                movieCardAdapter.addMovies(movies);
             }
 
             @Override
-            public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Log.e(TAG, "Network call failed: " + t.getMessage());
-                Toast.makeText(HomeActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onError(String message) {
+                Toast.makeText(HomeActivity.this, "Error loading more movies: " + message,
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -138,19 +120,6 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     @Override
     public void onCardDragging(Direction direction, float ratio) {
         Log.d(TAG, "onCardDragging: d=" + direction.name() + " ratio=" + ratio);
-    }
-
-    @Override
-    public void onCardSwiped(Direction direction) {
-        Log.d(TAG, "onCardSwiped: p=" + manager.getTopPosition() + " d=" + direction);
-        // Handle swipe based on direction (like/dislike logic)
-        if (direction == Direction.Right) {
-            // Handle like
-            Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
-        } else if (direction == Direction.Left) {
-            // Handle dislike
-            Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
