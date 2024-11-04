@@ -11,6 +11,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager;
 import com.yuyakaido.android.cardstackview.CardStackListener;
 import com.yuyakaido.android.cardstackview.CardStackView;
@@ -19,7 +22,9 @@ import com.yuyakaido.android.cardstackview.StackFrom;
 import com.yuyakaido.android.cardstackview.SwipeableMethod;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,16 +37,19 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     private CardStackLayoutManager manager;
     private MovieCardAdapter movieCardAdapter;
     private List<Movie> movieList;
+    private List<Movie> likedMovies; // Declare the likedMovies list here
     private static final String API_KEY = Constants.API_KEY;
     private static final String TAG = "HomeActivity";
     private int currentPage = 1;
     private List<String> userGenres;
+    private Set<String> addedMovieIds = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        likedMovies = new ArrayList<>();
         initializeCardStackView();
 
         Intent intent = getIntent();
@@ -81,31 +89,43 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
             return;
         }
 
-        String genreIds = TextUtils.join(",", genres);
-        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genreIds, page);
+        // Fetch movies for two selected genres at a time
+        List<String> genrePairs = new ArrayList<>();
+        for (int i = 0; i < genres.size(); i++) {
+            for (int j = i + 1; j < genres.size(); j++) {
+                genrePairs.add(genres.get(i) + "," + genres.get(j)); // Create pairs
+            }
+        }
 
-        call.enqueue(new Callback<MovieResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Movie> newMovies = response.body().getMovies();
-                    movieCardAdapter.addMovies(newMovies);
-                    Log.d(TAG, "Fetched " + newMovies.size() + " movies for genres");
-                } else {
-                    Log.e(TAG, "Error fetching movies: " + response.code() + " - " + response.message());
-                    Toast.makeText(HomeActivity.this, "Failed to fetch movies", Toast.LENGTH_SHORT).show();
+        // Fetch movies for each pair of genres
+        for (String genrePair : genrePairs) {
+            ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
+            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genrePair, page);
+            call.enqueue(new Callback<MovieResponse>() {
+                @Override
+                public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        List<Movie> newMovies = response.body().getMovies();
+                        for (Movie movie : newMovies) {
+                            // Check if the movie ID has already been added
+                            if (!addedMovieIds.contains(movie.getId())) {
+                                addedMovieIds.add(movie.getId()); // Add to the set
+                                movieCardAdapter.addMovie(movie); // Add to adapter (update your adapter method accordingly)
+                            }
+                        }
+                        Log.d(TAG, "Fetched " + newMovies.size() + " movies for genres: " + genrePair);
+                    } else {
+                        Log.e(TAG, "Error fetching movies: " + response.code() + " - " + response.message());
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Log.e(TAG, "Network call failed: " + t.getMessage());
-                Toast.makeText(HomeActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
+                    Log.e(TAG, "Network call failed: " + t.getMessage());
+                }
+            });
+        }
     }
-
     private void fetchPopularMovies(int page) {
         ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
         Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", page);
@@ -139,13 +159,21 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     @Override
     public void onCardSwiped(Direction direction) {
         Log.d(TAG, "onCardSwiped: p=" + manager.getTopPosition() + " d=" + direction);
+
         if (direction == Direction.Right) {
-            Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
+            int currentMovieIndex = manager.getTopPosition() - 1;
+            if (currentMovieIndex >= 0 && currentMovieIndex < movieList.size()) {
+                Movie likedMovie = movieList.get(currentMovieIndex);
+                likedMovies.add(likedMovie);
+                saveLikedMovie(likedMovie);
+                Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
+            }
         } else if (direction == Direction.Left) {
             Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
         }
 
-        if (manager.getTopPosition() == movieList.size() - 5) { // Trigger when 5 cards remain
+        // Load more movies when reaching the end
+        if (manager.getTopPosition() == movieList.size() - 5) {
             currentPage++;
             if (userGenres != null) {
                 fetchMoviesByGenres(userGenres, currentPage);
@@ -153,6 +181,16 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
                 fetchPopularMovies(currentPage);
             }
         }
+    }
+
+    private void saveLikedMovie(Movie movie) {
+        // Save the liked movie to Firestore
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(userId)
+                .update("likedMovies", FieldValue.arrayUnion(movie.getId())) // Store movie ID
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Liked movie added successfully"))
+                .addOnFailureListener(e -> Log.e(TAG, "Error adding liked movie", e));
     }
 
     @Override

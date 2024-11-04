@@ -2,6 +2,7 @@ package com.example.cineswipe;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
@@ -45,4 +46,11 @@ public interface ApiService {
             @Query("with_genres") String genres,  // Comma-separated genre IDs
             @Query("page") int page
     );
+    @GET("movie/{movie_id}")
+    Call<MovieResponse> getMovieById(
+            @Path("movie_id") String movieId,
+            @Query("api_key") String apiKey
+    );
+
+
 }

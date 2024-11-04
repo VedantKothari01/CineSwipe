@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class Movie implements Serializable {
-    private String id; // Unique identifier for the movie
+    private String id;
     private String title;
     private String release_date;
     private String poster_path;
@@ -12,8 +12,11 @@ public class Movie implements Serializable {
     private String overview;
     private double vote_average;
 
+    public Movie() {
+    }
+
     public Movie(String id, String title, String release_date, String poster_path, String backdrop_path, String overview, double vote_average) {
-        this.id = id; // Initialize id
+        this.id = id;
         this.title = title;
         this.release_date = release_date;
         this.poster_path = poster_path;
@@ -51,11 +54,11 @@ public class Movie implements Serializable {
     }
 
     public String getPosterUrl() {
-        return "https://image.tmdb.org/t/p/w500" + poster_path;
+        return (poster_path != null) ? "https://image.tmdb.org/t/p/w500" + poster_path : null;
     }
 
     public String getBackdropUrl() {
-        return "https://image.tmdb.org/t/p/w500" + backdrop_path;
+        return (backdrop_path != null) ? "https://image.tmdb.org/t/p/w500" + backdrop_path : null;
     }
 
     @Override
@@ -64,16 +67,16 @@ public class Movie implements Serializable {
         if (obj == null || getClass() != obj.getClass()) return false;
         Movie movie = (Movie) obj;
         return Double.compare(movie.vote_average, vote_average) == 0 &&
-                id.equals(movie.id) && // Include id in equality check
+                id.equals(movie.id) &&
                 title.equals(movie.title) &&
                 release_date.equals(movie.release_date) &&
-                poster_path.equals(movie.poster_path) &&
-                backdrop_path.equals(movie.backdrop_path) &&
+                Objects.equals(poster_path, movie.poster_path) &&
+                Objects.equals(backdrop_path, movie.backdrop_path) &&
                 overview.equals(movie.overview);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, release_date, poster_path, backdrop_path, overview, vote_average); // Include id in hash code
+        return Objects.hash(id, title, release_date, poster_path, backdrop_path, overview, vote_average);
     }
 }

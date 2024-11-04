@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager;
 import com.yuyakaido.android.cardstackview.CardStackListener;
@@ -33,7 +34,7 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private final String API_KEY = Constants.API_KEY;
-
+    private List<Movie> likedMovies = new ArrayList<>();
     // Add pagination variables
     private int currentPage = 1;
     private boolean isLoading = false;
@@ -207,16 +208,33 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     @Override
     public void onCardSwiped(Direction direction) {
         Log.d(TAG, "onCardSwiped: p=" + layoutManager.getTopPosition() + " d=" + direction);
+
         if (direction == Direction.Right) {
-            Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
+            int currentMovieIndex = layoutManager.getTopPosition() - 1; // Get the current movie index
+            if (currentMovieIndex >= 0 && currentMovieIndex < adapter.getItemCount()) {
+                Movie likedMovie = adapter.getMovieAt(currentMovieIndex);
+                likedMovies.add(likedMovie); // Add the liked movie to the list
+                saveLikedMovie(likedMovie); // Call a method to save the liked movie
+                Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
+            }
         } else if (direction == Direction.Left) {
             Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
         }
 
-        // Load more movies when user is about to reach the end
+        // Load more movies when reaching the end
         if (layoutManager.getTopPosition() >= adapter.getItemCount() - 5) {
             loadMoreMovies();
         }
+    }
+
+    private void saveLikedMovie(Movie movie) {
+        // Save the liked movie to Firestore
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(userId)
+                .update("likedMovies", FieldValue.arrayUnion(movie.getId())) // Store movie ID
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Liked movie added successfully"))
+                .addOnFailureListener(e -> Log.e(TAG, "Error adding liked movie", e));
     }
 
     @Override

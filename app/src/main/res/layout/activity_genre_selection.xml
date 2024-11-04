@@ -1,40 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
-    android:isScrollContainer="true"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/genreSelectionTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="32dp"
-        android:text="Select Your Favorite Genres"
-        android:textColor="@color/white"
-        android:textSize="24sp" />
-
-    <LinearLayout
-        android:id="@+id/genreLayout"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/genreSelectionTitle"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
-        <!-- Checkboxes will be dynamically added here -->
+        <TextView
+            android:id="@+id/genreSelectionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="32dp"
+            android:text="Select Your Favorite Genres"
+            android:textColor="@color/white"
+            android:textSize="24sp" />
 
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/genreLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/genreSelectionTitle"
+            android:isScrollContainer="true"
+            android:orientation="vertical" >
+        </LinearLayout>
 
-    <Button
-        android:id="@+id/saveButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/genreLayout"
-        android:layout_marginTop="32dp"
-        android:background="@color/accentColor"
-        android:text="Save Genres"
-        android:textColor="@color/accentColor" />
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/genreLayout"
+            android:layout_marginTop="32dp"
+            android:background="@color/accentColor"
+            android:text="Save Genres"
+            android:textColor="@color/accentColor" />
 
-</RelativeLayout>
+    </RelativeLayout>
+</ScrollView>

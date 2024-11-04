@@ -72,11 +72,25 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         notifyDataSetChanged();
     }
 
-    public void addMovies(List<Movie> newMovies) {
-        int startPosition = movieList.size();
-        movieList.addAll(newMovies);
-        notifyItemRangeInserted(startPosition, newMovies.size());
+    public void addMovie(Movie movie) {
+        movieList.add(movie); // Change here from movies to movieList
+        notifyItemInserted(movieList.size() - 1); // Change here from movies to movieList
     }
+
+    public void addMovies(List<Movie> newMovies) {
+        int startIndex = movieList.size(); // Change here from movies to movieList
+        movieList.addAll(newMovies); // Change here from movies to movieList
+        notifyItemRangeInserted(startIndex, newMovies.size()); // Change here from movies to movieList
+    }
+
+    // Method to get the movie at a specific index
+    public Movie getMovieAt(int currentMovieIndex) {
+        if (currentMovieIndex >= 0 && currentMovieIndex < movieList.size()) {
+            return movieList.get(currentMovieIndex); // Return the movie at the specified index
+        }
+        return null; // Return null if the index is out of bounds
+    }
+
     static class MovieViewHolder extends RecyclerView.ViewHolder {
         ImageView moviePoster;
         TextView movieTitle;

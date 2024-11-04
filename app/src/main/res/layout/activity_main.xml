@@ -7,31 +7,53 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="692dp"
+        android:layout_height="wrap_content"
         android:background="#121212"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:paddingBottom="64dp">
 
-        <RelativeLayout
-            android:id="@+id/main"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
+                android:layout_gravity="center_horizontal"
                 android:layout_marginTop="16dp"
                 android:text="CineSwipe"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp" />
+
+            <!-- Liked Movies Header -->
+            <TextView
+                android:id="@+id/tvLikedMovies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Liked Movies"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+
+            <!-- Liked Movies RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewLikedMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scrollbars="horizontal" />
 
             <!-- Popular Movies Header -->
             <TextView
                 android:id="@+id/tvPopularMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvTitle"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:text="Popular Movies"
@@ -43,7 +65,6 @@
                 android:id="@+id/recyclerViewPopularMovies"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvPopularMovies"
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:paddingStart="16dp"
@@ -55,7 +76,6 @@
                 android:id="@+id/tvTrendingMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/recyclerViewPopularMovies"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:text="Trending Movies"
@@ -67,7 +87,6 @@
                 android:id="@+id/recyclerViewTrendingMovies"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvTrendingMovies"
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:paddingStart="16dp"
@@ -79,7 +98,6 @@
                 android:id="@+id/tvTopRatedMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/recyclerViewTrendingMovies"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:text="Top Rated Movies"
@@ -91,7 +109,6 @@
                 android:id="@+id/recyclerViewTopRatedMovies"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvTopRatedMovies"
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:paddingStart="16dp"
@@ -103,7 +120,6 @@
                 android:id="@+id/tvUpcomingMovies"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/recyclerViewTopRatedMovies"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:text="Upcoming Movies"
@@ -115,13 +131,12 @@
                 android:id="@+id/recyclerViewUpcomingMovies"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvUpcomingMovies"
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:scrollbars="horizontal" />
-        </RelativeLayout>
+        </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

@@ -1,6 +1,7 @@
 package com.example.cineswipe;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -95,10 +96,24 @@ public class GenreSelectionActivity extends AppCompatActivity {
             return;
         }
 
+        // Convert selected genre IDs to a comma-separated string for SharedPreferences
+        StringBuilder selectedGenresStringBuilder = new StringBuilder();
+        for (Integer genreId : selectedGenreIds) {
+            selectedGenresStringBuilder.append(genreId).append(",");
+        }
+        if (selectedGenresStringBuilder.length() > 0) {
+            selectedGenresStringBuilder.setLength(selectedGenresStringBuilder.length() - 1);
+        }
+
+        // Save selected genres in SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("CineSwipePrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("selectedGenres", selectedGenresStringBuilder.toString());
+        editor.apply();
+
+        // Save genres to Firebase
         String userId = getCurrentUserId();
         Log.d(TAG, "Saving genres for user: " + userId);
-        Log.d(TAG, "Selected genre IDs: " + selectedGenreIds);
-
         databaseHelper.saveGenres(userId, selectedGenreIds, new DatabaseHelper.OnDataSaveListener() {
             @Override
             public void onSuccess() {
@@ -111,7 +126,6 @@ public class GenreSelectionActivity extends AppCompatActivity {
                     genreIdStrings.add(String.valueOf(genreId));
                 }
                 intent.putStringArrayListExtra("USER_GENRES", genreIdStrings);
-
                 startActivity(intent);
                 finish();
             }
@@ -119,9 +133,9 @@ public class GenreSelectionActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 Toast.makeText(GenreSelectionActivity.this,
-                        "Failed to save genres: " + e.getMessage(),
+                        "Failed to save genres in Firebase: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Failed to save genres", e);
+                Log.e(TAG, "Failed to save genres in Firebase", e);
             }
         });
     }
