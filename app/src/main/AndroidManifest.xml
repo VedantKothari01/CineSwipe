@@ -45,11 +45,27 @@
         <activity
             android:name=".GenreSelectionActivity"
             android:exported="true" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
+        
+        <activity 
+            android:name=".DatabaseHelper"
+            android:exported="true">
+        </activity>
+        <activity
+            android:name=".ApiClient"
+            android:exported="true">
+        </activity>
+        <activity
+            android:name=".ApiService"
+            android:exported="true">
+        </activity>
+        
+        <activity
+            android:name=".UserPreferences"
+            android:exported="true">
+        </activity>
+
+
 
     </application>
 
