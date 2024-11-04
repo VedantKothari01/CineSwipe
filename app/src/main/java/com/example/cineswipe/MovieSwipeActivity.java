@@ -4,65 +4,56 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager;
+import com.yuyakaido.android.cardstackview.CardStackListener;
 import com.yuyakaido.android.cardstackview.CardStackView;
 import com.yuyakaido.android.cardstackview.Direction;
-import com.yuyakaido.android.cardstackview.Duration;
 import com.yuyakaido.android.cardstackview.StackFrom;
 import com.yuyakaido.android.cardstackview.SwipeableMethod;
-import com.yuyakaido.android.cardstackview.CardStackListener;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
 public class MovieSwipeActivity extends AppCompatActivity implements CardStackListener {
     private static final String TAG = "MovieSwipeActivity";
     private CardStackView cardStackView;
     private MovieCardAdapter adapter;
     private CardStackLayoutManager layoutManager;
-    private MovieRecommendationSystem recommendationSystem;
     private FirebaseFirestore db;
     private FirebaseAuth auth;
-    private ProgressBar progressBar;
-    private boolean isLoading = false;
+    private final String API_KEY = Constants.API_KEY;
+
+    // Add pagination variables
     private int currentPage = 1;
+    private boolean isLoading = false;
+    private List<String> userGenres;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_swipe);
+        setContentView(R.layout.activity_home);
 
-        initializeViews();
-        initializeFirebase();
+        initializeComponents();
         setupCardStackView();
-        initializeRecommendationSystem();
         fetchUserPreferences();
     }
 
-    private void initializeViews() {
-        cardStackView = findViewById(R.id.cardStackView);
-        progressBar = findViewById(R.id.progressBar);
-        adapter = new MovieCardAdapter(this, new ArrayList<>());
-        cardStackView.setAdapter(adapter);
-    }
-
-    private void initializeFirebase() {
+    private void initializeComponents() {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-
-        if (auth.getCurrentUser() == null) {
-            handleUserNotLoggedIn();
-            return;
-        }
+        cardStackView = findViewById(R.id.cardStackView);
+        adapter = new MovieCardAdapter(this, new ArrayList<>());
     }
 
     private void setupCardStackView() {
@@ -79,92 +70,121 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         layoutManager.setCanScrollVertical(false);
 
         cardStackView.setLayoutManager(layoutManager);
+        cardStackView.setAdapter(adapter);
     }
 
-    private void initializeRecommendationSystem() {
-        String userId = auth.getCurrentUser().getUid();
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        recommendationSystem = new MovieRecommendationSystem(userId, apiService);
+    private void fetchUserPreferences() {
+        String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
 
-        recommendationSystem.setOnBatchReadyListener(new MovieRecommendationSystem.OnMoviesBatchReadyListener() {
+        if (userId != null) {
+            db.collection("users").document(userId)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                userGenres = (List<String>) document.get("genres");
+                                if (userGenres != null && !userGenres.isEmpty()) {
+                                    fetchMoviesByGenres(userGenres, currentPage, false);
+                                } else {
+                                    Log.d(TAG, "No genres found for user. Fetching default movies.");
+                                    fetchPopularMovies(currentPage, false);
+                                }
+                            } else {
+                                Log.d(TAG, "No such document");
+                                fetchPopularMovies(currentPage, false);
+                            }
+                        } else {
+                            Log.d(TAG, "Get failed with ", task.getException());
+                            fetchPopularMovies(currentPage, false);
+                        }
+                    });
+        } else {
+            Log.d(TAG, "User not logged in");
+            handleUserNotLoggedIn();
+        }
+    }
+
+    private void fetchMoviesByGenres(List<String> genres, int page, boolean isLoadingMore) {
+        if (isLoading) return;
+        isLoading = true;
+
+        if (genres != null && !genres.isEmpty()) {
+            ApiService apiService = ApiClient.getClient().create(ApiService.class);
+            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, String.join(",", genres), page);
+
+            call.enqueue(new Callback<MovieResponse>() {
+                @Override
+                public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                    isLoading = false;
+                    if (response.isSuccessful() && response.body() != null) {
+                        List<Movie> movies = response.body().getMovies();
+                        if (isLoadingMore) {
+                            adapter.addMovies(movies);
+                        } else {
+                            adapter.setMovies(movies);
+                        }
+                        Log.d(TAG, "Fetched " + movies.size() + " movies by genres for page " + page);
+                    } else {
+                        Log.e(TAG, "Response unsuccessful: " + response.message());
+                        if (!isLoadingMore) {
+                            fetchPopularMovies(page, false);
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<MovieResponse> call, Throwable t) {
+                    isLoading = false;
+                    Log.e(TAG, "API call failed: " + t.getMessage());
+                    if (!isLoadingMore) {
+                        fetchPopularMovies(page, false);
+                    }
+                }
+            });
+        }
+    }
+
+    private void fetchPopularMovies(int page, boolean isLoadingMore) {
+        if (isLoading) return;
+        isLoading = true;
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", page);
+
+        call.enqueue(new Callback<MovieResponse>() {
             @Override
-            public void onMoviesBatchReady(List<Movie> movies) {
-                runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    if (movies.isEmpty()) {
-                        showEmptyState();
+            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                isLoading = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Movie> movies = response.body().getMovies();
+                    if (isLoadingMore) {
+                        adapter.addMovies(movies);
                     } else {
                         adapter.setMovies(movies);
                     }
-                });
+                    Log.d(TAG, "Fetched " + movies.size() + " popular movies for page " + page);
+                } else {
+                    Log.e(TAG, "Response unsuccessful: " + response.message());
+                    showError("Failed to load movies");
+                }
             }
 
             @Override
-            public void onError(String message) {
-                runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    Toast.makeText(MovieSwipeActivity.this,
-                            "Error loading movies: " + message,
-                            Toast.LENGTH_SHORT).show();
-                });
+            public void onFailure(Call<MovieResponse> call, Throwable t) {
+                isLoading = false;
+                Log.e(TAG, "API call failed: " + t.getMessage());
+                showError("Network error: " + t.getMessage());
             }
         });
     }
 
-    private void fetchUserPreferences() {
-        progressBar.setVisibility(View.VISIBLE);
-        String userId = auth.getCurrentUser().getUid();
-
-        db.collection("users").document(userId)
-                .get()
-                .addOnSuccessListener(document -> {
-                    if (document.exists()) {
-                        List<String> genres = (List<String>) document.get("genres");
-                        if (genres != null && !genres.isEmpty()) {
-                            recommendationSystem.fetchNextBatch(
-                                    recommendationSystem.getOnBatchReadyListener());
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching user preferences", e);
-                    progressBar.setVisibility(View.GONE);
-                });
-    }
-
-    @Override
-    public void onCardDragging(Direction direction, float ratio) {}
-
-    @Override
-    public void onCardSwiped(Direction direction) {
-        int position = layoutManager.getTopPosition() - 1;
-        if (position >= 0 && position < adapter.getItemCount()) {
-            Movie swipedMovie = adapter.getMovieAt(position);
-            boolean isLiked = direction == Direction.Right;
-
-            recommendationSystem.handleSwipe(swipedMovie, isLiked);
-
-            if (layoutManager.getTopPosition() >= adapter.getItemCount() - 5) {
-                recommendationSystem.fetchNextBatch(
-                        recommendationSystem.getOnBatchReadyListener());
-            }
-        }
-    }
-
-    @Override
-    public void onCardRewound() {}
-
-    @Override
-    public void onCardCanceled() {}
-
-    @Override
-    public void onCardAppeared(View view, int position) {}
-
-    @Override
-    public void onCardDisappeared(View view, int position) {
-        if (position >= adapter.getItemCount() - 3 && !isLoading) {
-            recommendationSystem.fetchNextBatch(
-                    recommendationSystem.getOnBatchReadyListener());
+    private void loadMoreMovies() {
+        currentPage++;
+        if (userGenres != null && !userGenres.isEmpty()) {
+            fetchMoviesByGenres(userGenres, currentPage, true);
+        } else {
+            fetchPopularMovies(currentPage, true);
         }
     }
 
@@ -174,13 +194,48 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         finish();
     }
 
-    private void showEmptyState() {
-        Toast.makeText(this, "No movies available", Toast.LENGTH_SHORT).show();
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // CardStackListener implementation
+    @Override
+    public void onCardDragging(Direction direction, float ratio) {
+        Log.d(TAG, "onCardDragging: d=" + direction.name() + " ratio=" + ratio);
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Cleanup if needed
+    public void onCardSwiped(Direction direction) {
+        Log.d(TAG, "onCardSwiped: p=" + layoutManager.getTopPosition() + " d=" + direction);
+        if (direction == Direction.Right) {
+            Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
+        } else if (direction == Direction.Left) {
+            Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
+        }
+
+        // Load more movies when user is about to reach the end
+        if (layoutManager.getTopPosition() >= adapter.getItemCount() - 5) {
+            loadMoreMovies();
+        }
+    }
+
+    @Override
+    public void onCardRewound() {
+        Log.d(TAG, "onCardRewound: " + layoutManager.getTopPosition());
+    }
+
+    @Override
+    public void onCardCanceled() {
+        Log.d(TAG, "onCardCanceled: " + layoutManager.getTopPosition());
+    }
+
+    @Override
+    public void onCardAppeared(View view, int position) {
+        Log.d(TAG, "onCardAppeared: " + position);
+    }
+
+    @Override
+    public void onCardDisappeared(View view, int position) {
+        Log.d(TAG, "onCardDisappeared: " + position);
     }
 }

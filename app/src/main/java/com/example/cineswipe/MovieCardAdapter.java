@@ -53,7 +53,6 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         // Load poster image with Glide
         RequestOptions requestOptions = new RequestOptions()
                 .transforms(new CenterCrop(), new RoundedCorners(16));
-
         Glide.with(context)
                 .load(IMAGE_BASE_URL + movie.getPosterPath())
                 .apply(requestOptions)
@@ -67,8 +66,10 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         return movieList.size();
     }
 
-    public Movie getMovieAt(int position) {
-        return movieList.get(position);
+    public void setMovies(List<Movie> movies) {
+        this.movieList.clear();  // Clear existing movies before adding new ones
+        this.movieList.addAll(movies);
+        notifyDataSetChanged();
     }
 
     public void addMovies(List<Movie> newMovies) {
@@ -76,12 +77,6 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         movieList.addAll(newMovies);
         notifyItemRangeInserted(startPosition, newMovies.size());
     }
-
-    public void setMovies(List<Movie> movies) {
-        this.movieList = movies;
-        notifyDataSetChanged();
-    }
-
     static class MovieViewHolder extends RecyclerView.ViewHolder {
         ImageView moviePoster;
         TextView movieTitle;

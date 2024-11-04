@@ -38,12 +38,11 @@ public interface ApiService {
             @Query("api_key") String apiKey,
             @Query("language") String language
     );
+
     @GET("discover/movie")
     Call<MovieResponse> getMoviesByGenres(
             @Query("api_key") String apiKey,
-            @Query("with_genres") String genres,
+            @Query("with_genres") String genres,  // Comma-separated genre IDs
             @Query("page") int page
     );
-
-
 }

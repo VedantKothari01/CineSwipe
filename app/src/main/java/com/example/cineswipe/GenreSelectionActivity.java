@@ -103,7 +103,16 @@ public class GenreSelectionActivity extends AppCompatActivity {
             @Override
             public void onSuccess() {
                 Toast.makeText(GenreSelectionActivity.this, "Genres saved successfully!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(GenreSelectionActivity.this, HomeActivity.class));
+
+                // Pass selected genres to HomeActivity
+                Intent intent = new Intent(GenreSelectionActivity.this, HomeActivity.class);
+                ArrayList<String> genreIdStrings = new ArrayList<>();
+                for (Integer genreId : selectedGenreIds) {
+                    genreIdStrings.add(String.valueOf(genreId));
+                }
+                intent.putStringArrayListExtra("USER_GENRES", genreIdStrings);
+
+                startActivity(intent);
                 finish();
             }
 
