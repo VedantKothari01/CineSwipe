@@ -56,7 +56,7 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
         Glide.with(context)
                 .load(IMAGE_BASE_URL + movie.getPosterPath())
                 .apply(requestOptions)
-                .placeholder(R.drawable.placeholder_movie)
+                .placeholder(R.drawable.ic_placeholder)
                 .error(R.drawable.error_movie)
                 .into(holder.moviePoster);
     }
@@ -67,28 +67,28 @@ public class MovieCardAdapter extends RecyclerView.Adapter<MovieCardAdapter.Movi
     }
 
     public void setMovies(List<Movie> movies) {
-        this.movieList.clear();  // Clear existing movies before adding new ones
+        this.movieList.clear();
         this.movieList.addAll(movies);
         notifyDataSetChanged();
     }
 
     public void addMovie(Movie movie) {
-        movieList.add(movie); // Change here from movies to movieList
-        notifyItemInserted(movieList.size() - 1); // Change here from movies to movieList
+        movieList.add(movie);
+        notifyItemInserted(movieList.size() - 1);
     }
 
     public void addMovies(List<Movie> newMovies) {
-        int startIndex = movieList.size(); // Change here from movies to movieList
-        movieList.addAll(newMovies); // Change here from movies to movieList
-        notifyItemRangeInserted(startIndex, newMovies.size()); // Change here from movies to movieList
+        int startIndex = movieList.size();
+        movieList.addAll(newMovies);
+        notifyItemRangeInserted(startIndex, newMovies.size());
     }
 
     // Method to get the movie at a specific index
     public Movie getMovieAt(int currentMovieIndex) {
         if (currentMovieIndex >= 0 && currentMovieIndex < movieList.size()) {
-            return movieList.get(currentMovieIndex); // Return the movie at the specified index
+            return movieList.get(currentMovieIndex);
         }
-        return null; // Return null if the index is out of bounds
+        return null;
     }
 
     static class MovieViewHolder extends RecyclerView.ViewHolder {

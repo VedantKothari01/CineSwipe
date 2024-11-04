@@ -46,11 +46,27 @@ public interface ApiService {
             @Query("with_genres") String genres,  // Comma-separated genre IDs
             @Query("page") int page
     );
+
     @GET("movie/{movie_id}")
-    Call<MovieResponse> getMovieById(
+    Call<Movie> getMovieDetails(
+            @Path("movie_id") String movieId,
+            @Query("api_key") String apiKey,
+            @Query("append_to_response") String appendToResponse
+    );
+
+    // Add new endpoint for movie credits (cast)
+    @GET("movie/{movie_id}/credits")
+    Call<CreditsResponse> getMovieCredits(
             @Path("movie_id") String movieId,
             @Query("api_key") String apiKey
     );
 
+    @GET("discover/movie")
+    Call<MovieResponse> getRandomMovies(
+            @Query("api_key") String apiKey,
+            @Query("language") String language,
+            @Query("page") int page,
+            @Query("sort_by") String sortBy
+    );
 
 }

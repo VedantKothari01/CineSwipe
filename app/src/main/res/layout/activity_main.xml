@@ -27,28 +27,6 @@
                 android:textColor="#FFFFFF"
                 android:textSize="24sp" />
 
-            <!-- Liked Movies Header -->
-            <TextView
-                android:id="@+id/tvLikedMovies"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:text="Liked Movies"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp" />
-
-            <!-- Liked Movies RecyclerView -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewLikedMovies"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:clipToPadding="false"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:scrollbars="horizontal" />
-
             <!-- Popular Movies Header -->
             <TextView
                 android:id="@+id/tvPopularMovies"

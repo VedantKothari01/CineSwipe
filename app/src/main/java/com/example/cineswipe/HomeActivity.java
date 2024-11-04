@@ -7,10 +7,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -20,12 +18,11 @@ import com.yuyakaido.android.cardstackview.CardStackView;
 import com.yuyakaido.android.cardstackview.Direction;
 import com.yuyakaido.android.cardstackview.StackFrom;
 import com.yuyakaido.android.cardstackview.SwipeableMethod;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -54,11 +51,11 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
 
         Intent intent = getIntent();
         userGenres = intent.getStringArrayListExtra("USER_GENRES");
-        if (userGenres != null) {
+        if (userGenres != null && !userGenres.isEmpty()) {
             fetchMoviesByGenres(userGenres, currentPage);
         } else {
-            Log.e(TAG, "No genres provided for fetching movies.");
-            fetchPopularMovies(currentPage);
+            Log.d(TAG, "No genres provided, fetching random movies instead.");
+            fetchRandomMovies(currentPage);
         }
     }
 
@@ -126,19 +123,32 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
             });
         }
     }
-    private void fetchPopularMovies(int page) {
+    private void fetchRandomMovies(int page) {
         ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", page);
+
+        // Get a random sorting method
+        String[] sortingMethods = {
+                "popularity.desc",
+                "revenue.desc",
+                "vote_average.desc",
+                "primary_release_date.desc",
+                "vote_count.desc"
+        };
+        String randomSort = sortingMethods[(int) (Math.random() * sortingMethods.length)];
+
+        Call<MovieResponse> call = apiService.getRandomMovies(API_KEY, "en-US", page, randomSort);
 
         call.enqueue(new Callback<MovieResponse>() {
             @Override
             public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Movie> newMovies = response.body().getMovies();
+                    // Shuffle the movies list for additional randomness
+                    Collections.shuffle(newMovies);
                     movieCardAdapter.addMovies(newMovies);
-                    Log.d(TAG, "Fetched " + newMovies.size() + " popular movies");
+                    Log.d(TAG, "Fetched " + newMovies.size() + " random movies");
                 } else {
-                    Log.e(TAG, "Error fetching popular movies: " + response.code());
+                    Log.e(TAG, "Error fetching random movies: " + response.code());
                     Toast.makeText(HomeActivity.this, "Failed to fetch movies", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -150,6 +160,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
             }
         });
     }
+
 
     @Override
     public void onCardDragging(Direction direction, float ratio) {
@@ -171,20 +182,17 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
         } else if (direction == Direction.Left) {
             Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
         }
-
-        // Load more movies when reaching the end
         if (manager.getTopPosition() == movieList.size() - 5) {
             currentPage++;
-            if (userGenres != null) {
+            if (userGenres != null && !userGenres.isEmpty()) {
                 fetchMoviesByGenres(userGenres, currentPage);
             } else {
-                fetchPopularMovies(currentPage);
+                fetchRandomMovies(currentPage);
             }
         }
     }
 
     private void saveLikedMovie(Movie movie) {
-        // Save the liked movie to Firestore
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(userId)

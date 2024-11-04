@@ -10,22 +10,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerViewPopularMovies, recyclerViewLikedMovies, recyclerViewTrendingMovies, recyclerViewTopRatedMovies, recyclerViewUpcomingMovies;
+    private RecyclerView recyclerViewPopularMovies, recyclerViewTrendingMovies, recyclerViewTopRatedMovies, recyclerViewUpcomingMovies;
     private MovieHorizontalAdapter popularMovieHorizontalAdapter, trendingMovieHorizontalAdapter, topRatedMovieHorizontalAdapter, upcomingMovieHorizontalAdapter;
     private List<Movie> popularMovieList, trendingMovieList, topRatedMovieList, upcomingMovieList;
-    private MovieHorizontalAdapter likedMovieHorizontalAdapter;
-    private List<Movie> likedMovieList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,16 +36,9 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        likedMovieList = new ArrayList<>();
-        likedMovieHorizontalAdapter = new MovieHorizontalAdapter(this, likedMovieList);
-
         setContentView(R.layout.activity_main);
 
         // Initialize RecyclerViews
-        recyclerViewLikedMovies = findViewById(R.id.recyclerViewLikedMovies);
-        recyclerViewLikedMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerViewLikedMovies.setAdapter(likedMovieHorizontalAdapter);
-
         recyclerViewPopularMovies = findViewById(R.id.recyclerViewPopularMovies);
         recyclerViewTrendingMovies = findViewById(R.id.recyclerViewTrendingMovies);
         recyclerViewTopRatedMovies = findViewById(R.id.recyclerViewTopRatedMovies);
@@ -68,7 +56,15 @@ public class MainActivity extends AppCompatActivity {
         topRatedMovieHorizontalAdapter = new MovieHorizontalAdapter(this, topRatedMovieList);
         upcomingMovieHorizontalAdapter = new MovieHorizontalAdapter(this, upcomingMovieList);
 
-        // Set up adapters for RecyclerViews
+        // Define item spacing for RecyclerViews
+        int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.movie_card_spacing);
+        HorizontalSpaceItemDecoration decoration = new HorizontalSpaceItemDecoration(spacingInPixels);
+        recyclerViewPopularMovies.addItemDecoration(decoration);
+        recyclerViewTrendingMovies.addItemDecoration(decoration);
+        recyclerViewTopRatedMovies.addItemDecoration(decoration);
+        recyclerViewUpcomingMovies.addItemDecoration(decoration);
+
+        // Set layout managers
         recyclerViewPopularMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerViewPopularMovies.setAdapter(popularMovieHorizontalAdapter);
         recyclerViewTrendingMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -79,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewUpcomingMovies.setAdapter(upcomingMovieHorizontalAdapter);
 
         // Fetch movies for each category
-        fetchLikedMovies();
         fetchPopularMovies();
         fetchTrendingMovies();
         fetchTopRatedMovies();
@@ -102,45 +97,6 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         });
-    }
-
-    private void fetchLikedMovies() {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("users").document(userId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        List<String> likedMovieIds = (List<String>) documentSnapshot.get("likedMovies");
-                        if (likedMovieIds != null) {
-                            fetchMoviesByIds(likedMovieIds);
-                        }
-                    }
-                })
-                .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error fetching liked movies", Toast.LENGTH_SHORT).show());
-    }
-
-    private void fetchMoviesByIds(List<String> likedMovieIds) {
-        String apiKey = Constants.API_KEY; // Ensure you have your API key
-        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-
-        for (String movieId : likedMovieIds) {
-            Call<MovieResponse> call = apiService.getMovieById(movieId, apiKey); // Ensure this returns MovieResponse
-            call.enqueue(new Callback<MovieResponse>() {
-                @Override
-                public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        likedMovieList.add(response.body().getFirstMovie()); // Get the first movie from the response
-                        likedMovieHorizontalAdapter.notifyDataSetChanged();
-                    }
-                }
-
-                @Override
-                public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                    Toast.makeText(MainActivity.this, "Error fetching liked movie: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
     }
 
     private void fetchPopularMovies() {
@@ -207,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                     topRatedMovieList.addAll(response.body().getMovies());
                     topRatedMovieHorizontalAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch top rated movies", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Failed to fetch top-rated movies", Toast.LENGTH_SHORT).show();
                 }
             }
 
