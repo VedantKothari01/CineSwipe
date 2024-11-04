@@ -86,43 +86,63 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
             return;
         }
 
-        // Fetch movies for two selected genres at a time
-        List<String> genrePairs = new ArrayList<>();
+        ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
+
+        // Handle single genre case
+        if (genres.size() == 1) {
+            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genres.get(0), page);
+            fetchMoviesForGenres(call);
+            return;
+        }
+
+        // Handle multiple genres case
+        // Create genre pairs for more diverse results
+        List<String> genreCombinations = new ArrayList<>();
+
+        // Add individual genres first
+        genreCombinations.addAll(genres);
+
+        // Then add pairs for more variety
         for (int i = 0; i < genres.size(); i++) {
             for (int j = i + 1; j < genres.size(); j++) {
-                genrePairs.add(genres.get(i) + "," + genres.get(j)); // Create pairs
+                genreCombinations.add(genres.get(i) + "," + genres.get(j));
             }
         }
 
-        // Fetch movies for each pair of genres
-        for (String genrePair : genrePairs) {
-            ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
-            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genrePair, page);
-            call.enqueue(new Callback<MovieResponse>() {
-                @Override
-                public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        List<Movie> newMovies = response.body().getMovies();
-                        for (Movie movie : newMovies) {
-                            // Check if the movie ID has already been added
-                            if (!addedMovieIds.contains(movie.getId())) {
-                                addedMovieIds.add(movie.getId()); // Add to the set
-                                movieCardAdapter.addMovie(movie); // Add to adapter (update your adapter method accordingly)
-                            }
-                        }
-                        Log.d(TAG, "Fetched " + newMovies.size() + " movies for genres: " + genrePair);
-                    } else {
-                        Log.e(TAG, "Error fetching movies: " + response.code() + " - " + response.message());
-                    }
-                }
-
-                @Override
-                public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                    Log.e(TAG, "Network call failed: " + t.getMessage());
-                }
-            });
+        // Fetch movies for each genre combination
+        for (String genreCombination : genreCombinations) {
+            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, genreCombination, page);
+            fetchMoviesForGenres(call);
         }
     }
+
+    // Helper method to handle the API call and response
+    private void fetchMoviesForGenres(Call<MovieResponse> call) {
+        call.enqueue(new Callback<MovieResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Movie> newMovies = response.body().getMovies();
+                    for (Movie movie : newMovies) {
+                        // Check if the movie ID has already been added
+                        if (!addedMovieIds.contains(movie.getId())) {
+                            addedMovieIds.add(movie.getId());
+                            movieCardAdapter.addMovie(movie);
+                        }
+                    }
+                    Log.d(TAG, "Fetched " + newMovies.size() + " movies");
+                } else {
+                    Log.e(TAG, "Error fetching movies: " + response.code() + " - " + response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
+                Log.e(TAG, "Network call failed: " + t.getMessage());
+            }
+        });
+    }
+
     private void fetchRandomMovies(int page) {
         ApiService apiService = ApiClient.getRetrofitInstance().create(ApiService.class);
 
