@@ -1,12 +1,11 @@
 package com.example.cineswipe;
 
 import android.util.Log;
-
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.*;
 
 public class MovieRecommendationSystem {
+    private static final String TAG = "MovieRecommendationSystem";
     private static final int MINIMUM_CARDS_THRESHOLD = 5;
     private static final int BATCH_SIZE = 20;
     private static final float LIKE_WEIGHT_DELTA = 0.15f;
@@ -15,65 +14,84 @@ public class MovieRecommendationSystem {
     private static final float MAX_WEIGHT = 2.0f;
 
     private final String userId;
-    private final DatabaseReference userPrefsRef;
     private final ApiService apiService;
+    private final FirebaseFirestore db;
     private List<Movie> currentBatch;
-    private Set<String> seenMovieIds;  // Changed from Long to String
+    private Set<String> seenMovieIds;
     private Map<Integer, Float> genreWeights;
     private int currentPage = 1;
     private boolean isLoading = false;
+    private OnMoviesBatchReadyListener batchReadyListener;
 
     public MovieRecommendationSystem(String userId, ApiService apiService) {
         this.userId = userId;
         this.apiService = apiService;
+        this.db = FirebaseFirestore.getInstance();
         this.currentBatch = new ArrayList<>();
-        this.seenMovieIds = new HashSet<>();  // Now stores String IDs
+        this.seenMovieIds = new HashSet<>();
         this.genreWeights = new HashMap<>();
-        this.userPrefsRef = FirebaseDatabase.getInstance().getReference("user_preferences").child(userId);
         initializeGenreWeights();
     }
 
-    private void initializeGenreWeights() {
-        userPrefsRef.child("genres").get().addOnSuccessListener(dataSnapshot -> {
-            if (dataSnapshot.exists()) {
-                List<Integer> initialGenres = (List<Integer>) dataSnapshot.getValue();
-                for (Integer genreId : initialGenres) {
-                    genreWeights.put(genreId, 1.0f);
-                }
-            }
-        });
+    public void setOnBatchReadyListener(OnMoviesBatchReadyListener listener) {
+        this.batchReadyListener = listener;
+    }
 
-        // Also load previously adjusted weights if they exist
-        userPrefsRef.child("genreWeights").get().addOnSuccessListener(dataSnapshot -> {
-            if (dataSnapshot.exists()) {
-                Map<String, Float> savedWeights = (Map<String, Float>) dataSnapshot.getValue();
-                if (savedWeights != null) {
-                    savedWeights.forEach((genreId, weight) ->
-                            genreWeights.put(Integer.parseInt(genreId), weight));
-                }
-            }
-        });
+    private void initializeGenreWeights() {
+        db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Initialize genre weights from user preferences
+                        List<Long> initialGenres = (List<Long>) documentSnapshot.get("genres");
+                        if (initialGenres != null) {
+                            for (Long genreId : initialGenres) {
+                                genreWeights.put(genreId.intValue(), 1.0f);
+                            }
+                        }
+
+                        // Load previously saved weights
+                        Map<String, Double> savedWeights =
+                                (Map<String, Double>) documentSnapshot.get("genreWeights");
+                        if (savedWeights != null) {
+                            savedWeights.forEach((genreId, weight) ->
+                                    genreWeights.put(Integer.parseInt(genreId), weight.floatValue()));
+                        }
+
+                        // Load seen movies
+                        Map<String, Boolean> seenMovies =
+                                (Map<String, Boolean>) documentSnapshot.get("seenMovies");
+                        if (seenMovies != null) {
+                            seenMovieIds.addAll(seenMovies.keySet());
+                        }
+
+                        // Initial fetch after weights are loaded
+                        if (batchReadyListener != null) {
+                            fetchNextBatch(batchReadyListener);
+                        }
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Error initializing genre weights", e));
     }
 
     public void fetchNextBatch(OnMoviesBatchReadyListener listener) {
         if (isLoading) {
-            return; // Prevent multiple simultaneous requests
+            Log.d(TAG, "Fetch in progress, skipping request");
+            return;
         }
 
         if (currentBatch.size() > MINIMUM_CARDS_THRESHOLD) {
-            listener.onMoviesBatchReady(currentBatch);
+            Log.d(TAG, "Sufficient movies in batch, returning current batch");
+            listener.onMoviesBatchReady(new ArrayList<>(currentBatch));
             return;
         }
 
         isLoading = true;
+        Log.d(TAG, "Fetching new batch of movies, page: " + currentPage);
 
-        // Sort genres by weight to prioritize higher weighted genres
-        String weightedGenreIds = genreWeights.entrySet().stream()
-                .sorted(Map.Entry.<Integer, Float>comparingByValue().reversed())
-                .limit(3) // Get top 3 genres
-                .map(entry -> String.valueOf(entry.getKey()))
-                .reduce((a, b) -> a + "," + b)
-                .orElse("");
+        // Get top weighted genres
+        String weightedGenreIds = getTopWeightedGenres(3);
 
         apiService.getMoviesByGenres(Constants.API_KEY, weightedGenreIds, currentPage)
                 .enqueue(new retrofit2.Callback<MovieResponse>() {
@@ -81,89 +99,113 @@ public class MovieRecommendationSystem {
                     public void onResponse(retrofit2.Call<MovieResponse> call,
                                            retrofit2.Response<MovieResponse> response) {
                         isLoading = false;
+
                         if (response.isSuccessful() && response.body() != null) {
                             List<Movie> newMovies = response.body().getMovies();
-
-                            // Filter out already seen movies
-                            List<Movie> unseenMovies = newMovies.stream()
-                                    .filter(movie -> !seenMovieIds.contains(movie.getId()))
-                                    .collect(java.util.stream.Collectors.toList());
-
-                            if (unseenMovies.isEmpty() && currentPage < 1000) {
-                                // If all movies in this page were seen, try next page
-                                currentPage++;
-                                fetchNextBatch(listener);
-                                return;
-                            }
-
-                            currentBatch.addAll(unseenMovies);
-                            currentPage++;
-                            listener.onMoviesBatchReady(currentBatch);
+                            processNewMovies(newMovies, listener);
                         } else {
-                            listener.onError("Failed to fetch movies");
+                            String error = "Failed to fetch movies: " +
+                                    (response.errorBody() != null ? response.errorBody().toString() : "Unknown error");
+                            Log.e(TAG, error);
+                            listener.onError(error);
                         }
                     }
 
                     @Override
                     public void onFailure(retrofit2.Call<MovieResponse> call, Throwable t) {
                         isLoading = false;
-                        listener.onError(t.getMessage());
+                        String error = "Network error: " + t.getMessage();
+                        Log.e(TAG, error, t);
+                        listener.onError(error);
                     }
                 });
     }
 
-    public void handleSwipe(Movie movie, boolean isLiked) {
-        // Mark movie as seen (now using String ID)
-        seenMovieIds.add(movie.getId());
+    private String getTopWeightedGenres(int limit) {
+        return genreWeights.entrySet().stream()
+                .sorted(Map.Entry.<Integer, Float>comparingByValue().reversed())
+                .limit(limit)
+                .map(entry -> String.valueOf(entry.getKey()))
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+    }
 
-        // Remove the swiped movie from current batch
-        currentBatch.remove(movie);
+    private void processNewMovies(List<Movie> newMovies, OnMoviesBatchReadyListener listener) {
+        List<Movie> unseenMovies = newMovies.stream()
+                .filter(movie -> !seenMovieIds.contains(movie.getId()))
+                .collect(java.util.stream.Collectors.toList());
 
-        // Update genre weights based on user preference
-        if (movie.getGenreIds() != null) {
-            float weightDelta = isLiked ? LIKE_WEIGHT_DELTA : DISLIKE_WEIGHT_DELTA;
-
-            // Calculate average current weight of movie's genres
-            float avgCurrentWeight = (float) movie.getGenreIds().stream()
-                    .mapToDouble(genreId -> genreWeights.getOrDefault(genreId, 1.0f))
-                    .average()
-                    .orElse(1.0);
-
-            // Apply weighted delta based on current weights
-            for (Integer genreId : movie.getGenreIds()) {
-                float currentWeight = genreWeights.getOrDefault(genreId, 1.0f);
-                // Adjust weight more if current weight is different from average
-                float adjustedDelta = weightDelta * (1 + Math.abs(currentWeight - avgCurrentWeight));
-                float newWeight = Math.min(MAX_WEIGHT,
-                        Math.max(MIN_WEIGHT, currentWeight + adjustedDelta));
-                genreWeights.put(genreId, newWeight);
-            }
+        if (unseenMovies.isEmpty() && currentPage < 1000) {
+            currentPage++;
+            fetchNextBatch(listener);
+            return;
         }
 
-        // Save updated preferences to Firebase
+        currentBatch.addAll(unseenMovies);
+        currentPage++;
+
+        Log.d(TAG, "Added " + unseenMovies.size() + " new movies to batch");
+        listener.onMoviesBatchReady(new ArrayList<>(currentBatch));
+    }
+
+    public void handleSwipe(Movie movie, boolean isLiked) {
+        if (movie == null) {
+            Log.e(TAG, "Attempted to handle swipe for null movie");
+            return;
+        }
+
+        seenMovieIds.add(movie.getId());
+        currentBatch.remove(movie);
+
+        updateGenreWeights(movie, isLiked);
+        savePreferencesToFirestore(movie, isLiked);
+
+        if (currentBatch.size() <= MINIMUM_CARDS_THRESHOLD && batchReadyListener != null) {
+            fetchNextBatch(batchReadyListener);
+        }
+    }
+
+    private void updateGenreWeights(Movie movie, boolean isLiked) {
+        Integer[] genreIds = movie.getGenreIds();
+        if (genreIds == null || genreIds.length == 0) {
+            Log.d(TAG, "No genre IDs for movie: " + movie.getId());
+            return;
+        }
+
+        float weightDelta = isLiked ? LIKE_WEIGHT_DELTA : DISLIKE_WEIGHT_DELTA;
+
+        float avgCurrentWeight = (float) Arrays.stream(genreIds)
+                .filter(Objects::nonNull)
+                .mapToDouble(genreId -> genreWeights.getOrDefault(genreId, 1.0f))
+                .average()
+                .orElse(1.0);
+
+        // Update weights for each genre
+        Arrays.stream(genreIds)
+                .filter(Objects::nonNull)
+                .forEach(genreId -> {
+                    float currentWeight = genreWeights.getOrDefault(genreId, 1.0f);
+                    float adjustedDelta = weightDelta * (1 + Math.abs(currentWeight - avgCurrentWeight));
+                    float newWeight = Math.min(MAX_WEIGHT,
+                            Math.max(MIN_WEIGHT, currentWeight + adjustedDelta));
+                    genreWeights.put(genreId, newWeight);
+                });
+    }
+
+    private void savePreferencesToFirestore(Movie movie, boolean isLiked) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("genreWeights", genreWeights);
+        updates.put("seenMovies/" + movie.getId(), true);
+
         if (isLiked) {
             updates.put("likedMovies/" + movie.getId(), true);
             updates.put("likedMoviesTimestamp/" + movie.getId(), System.currentTimeMillis());
         }
-        userPrefsRef.updateChildren(updates);
 
-        // If batch is running low, fetch more
-        if (currentBatch.size() <= MINIMUM_CARDS_THRESHOLD) {
-            fetchNextBatch(new OnMoviesBatchReadyListener() {
-                @Override
-                public void onMoviesBatchReady(List<Movie> movies) {
-                    // Batch replenished successfully
-                }
-
-                @Override
-                public void onError(String message) {
-                    // Log error but don't disrupt user experience
-                    Log.e("MovieRecommendationSystem", "Error fetching next batch: " + message);
-                }
-            });
-        }
+        db.collection("users").document(userId)
+                .update(updates)
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Error updating user preferences", e));
     }
 
     public interface OnMoviesBatchReadyListener {
