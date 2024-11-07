@@ -2,6 +2,8 @@ package com.example.cineswipe;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,7 +23,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerViewPopularMovies, recyclerViewTrendingMovies, recyclerViewTopRatedMovies, recyclerViewUpcomingMovies;
     private MovieHorizontalAdapter popularMovieHorizontalAdapter, trendingMovieHorizontalAdapter, topRatedMovieHorizontalAdapter, upcomingMovieHorizontalAdapter;
     private List<Movie> popularMovieList, trendingMovieList, topRatedMovieList, upcomingMovieList;
-
+    private ProgressBar progressBar;
+    private View framelayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewTrendingMovies = findViewById(R.id.recyclerViewTrendingMovies);
         recyclerViewTopRatedMovies = findViewById(R.id.recyclerViewTopRatedMovies);
         recyclerViewUpcomingMovies = findViewById(R.id.recyclerViewUpcomingMovies);
-
+        progressBar = findViewById(R.id.progressBar);
+        framelayout = findViewById(R.id.framelayout);
         //Initialize movie lists
         popularMovieList = new ArrayList<>();
         trendingMovieList = new ArrayList<>();
@@ -80,18 +84,26 @@ public class MainActivity extends AppCompatActivity {
         fetchTopRatedMovies();
         fetchUpcomingMovies();
 
+        showProgress(false);
+
         //Initialize Bottom Navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
+                showProgress(true);
+                framelayout.setVisibility(View.GONE);
                 startActivity(new Intent(MainActivity.this, HomeActivity.class));
                 return true;
             } else if (itemId == R.id.nav_movies) {
+                showProgress(true);
+                framelayout.setVisibility(View.GONE);
                 recyclerViewPopularMovies.smoothScrollToPosition(0);
                 return true;
             } else if (itemId == R.id.nav_profile) {
+                showProgress(true);
+                framelayout.setVisibility(View.GONE);
                 startActivity(new Intent(MainActivity.this, GenreSelectionActivity.class));
                 return true;
             }
@@ -197,5 +209,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    private void showProgress(boolean show) {
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 }

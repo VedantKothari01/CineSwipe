@@ -2,8 +2,10 @@ package com.example.cineswipe;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,17 +20,18 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginButton, signUpButton;
     private FirebaseAuth auth;
     private DatabaseReference databaseReference;
-
+    private ProgressBar progressBar;
+    private View contentLayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        //Initialize FirebaseAuth and DatabaseReference
+        // Initialize Firebase
         auth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference("Users");
 
-        //Check if a user is already logged in
+        // Check if user is already logged in
         if (auth.getCurrentUser() != null) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
@@ -36,17 +39,29 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        //Initialize UI elements
+        // Initialize UI elements
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
         loginButton = findViewById(R.id.loginButton);
         signUpButton = findViewById(R.id.signUpButton);
+        progressBar = findViewById(R.id.progressBar);
+        contentLayout = findViewById(R.id.contentLayout);
 
-        loginButton.setOnClickListener(v -> loginUser());
+        loginButton.setOnClickListener(v -> {
+            showProgress(true);
+            contentLayout.setVisibility(View.GONE);
+            loginUser();
+        });
         signUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
             startActivity(intent);
+            showProgress(true);
+            contentLayout.setVisibility(View.GONE);
         });
+    }
+
+    private void showProgress(boolean show) {
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private void loginUser() {
@@ -61,13 +76,22 @@ public class LoginActivity extends AppCompatActivity {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        Intent intent = new Intent(LoginActivity.this, GenreSelectionActivity.class);
+                        // Login successful, start HomeActivity
+                        showProgress(false);
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
                     } else {
+                        showProgress(false);
+                        // Login failed, show an error message
                         Toast.makeText(LoginActivity.this, "Authentication Failed.", Toast.LENGTH_LONG).show();
                     }
+                    showProgress(false); // Hide progress bar after login attempt finishes
+                })
+                .addOnFailureListener(e -> {
+                    // Handle login failure scenario
+                    Toast.makeText(LoginActivity.this, "Authentication Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    showProgress(false); // Hide progress bar on failure
                 });
-
     }
 }

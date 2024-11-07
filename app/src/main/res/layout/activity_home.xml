@@ -2,9 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorPrimary">
+    android:background="?attr/colorPrimary"
+    tools:ignore="ExtraText">
 
     <TextView
         android:id="@+id/tvTitle"
@@ -20,13 +22,27 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <FrameLayout
+        android:id="@+id/frameLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_marginBottom="16dp"  android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginEnd="411dp"
+            android:layout_marginBottom="731dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <com.yuyakaido.android.cardstackview.CardStackView
             android:id="@+id/cardStackView"

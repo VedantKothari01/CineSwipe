@@ -1,12 +1,14 @@
 package com.example.cineswipe;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
@@ -40,25 +42,28 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     private int currentPage = 1;
     private List<String> userGenres;
     private Set<String> addedMovieIds = new HashSet<>();
-
+    private ProgressBar progressBar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
+        progressBar = findViewById(R.id.progressBar);
         likedMovies = new ArrayList<>();
         initializeCardStackView();
-
         Intent intent = getIntent();
         userGenres = intent.getStringArrayListExtra("USER_GENRES");
         if (userGenres != null && !userGenres.isEmpty()) {
+            showProgress(true);
             fetchMoviesByGenres(userGenres, currentPage);
         } else {
             Log.d(TAG, "No genres provided, fetching random movies instead.");
+            showProgress(true);
             fetchRandomMovies(currentPage);
         }
     }
-
+    private void showProgress(boolean show) {
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
     private void initializeCardStackView() {
         cardStackView = findViewById(R.id.cardStackView);
         manager = new CardStackLayoutManager(this, this);
@@ -229,5 +234,7 @@ public class HomeActivity extends AppCompatActivity implements CardStackListener
     @Override
     public void onCardDisappeared(View view, int position) {
         Log.d(TAG, "onCardDisappeared: " + position);
+
     }
+
 }

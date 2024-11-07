@@ -3,9 +3,11 @@ package com.example.cineswipe;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,17 +27,20 @@ public class GenreSelectionActivity extends AppCompatActivity {
     private LinearLayout genreLayout;
     private ApiService apiService;
     private boolean isSaving = false;
-
+    private ProgressBar progressBar;
+    private View relativelayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_genre_selection);
-
+        progressBar = findViewById(R.id.progressBar);
+        relativelayout = findViewById(R.id.relativelayout);
         initializeComponents();
-
         Button saveButton = findViewById(R.id.saveButton);
         saveButton.setOnClickListener(v -> {
             if (!isSaving) {
+                showProgress(true);
+                relativelayout.setVisibility(View.GONE);
                 saveGenres();
             }
         });
@@ -154,6 +159,7 @@ public class GenreSelectionActivity extends AppCompatActivity {
                         "Preferences updated successfully!", Toast.LENGTH_SHORT).show();
 
                 //Pass selected genres to HomeActivity
+                showProgress(true);
                 Intent intent = new Intent(GenreSelectionActivity.this, HomeActivity.class);
                 ArrayList<String> genreIdStrings = new ArrayList<>();
                 for (Integer genreId : selectedGenreIds) {
@@ -162,6 +168,7 @@ public class GenreSelectionActivity extends AppCompatActivity {
                 intent.putStringArrayListExtra("USER_GENRES", genreIdStrings);
 
                 startActivity(intent);
+                showProgress(false);
                 finish();
             }
 
@@ -179,5 +186,8 @@ public class GenreSelectionActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+    private void showProgress(boolean show) {
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 }
