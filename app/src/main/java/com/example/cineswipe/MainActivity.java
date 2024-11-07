@@ -30,10 +30,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //Initialize Firebase
         FirebaseApp.initializeApp(this);
 
-        //Check if user is logged in
+
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
@@ -44,25 +43,25 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        //Initialize RecyclerViews
+
         recyclerViewPopularMovies = findViewById(R.id.recyclerViewPopularMovies);
         recyclerViewTrendingMovies = findViewById(R.id.recyclerViewTrendingMovies);
         recyclerViewTopRatedMovies = findViewById(R.id.recyclerViewTopRatedMovies);
         recyclerViewUpcomingMovies = findViewById(R.id.recyclerViewUpcomingMovies);
 
-        //Initialize movie lists
+
         popularMovieList = new ArrayList<>();
         trendingMovieList = new ArrayList<>();
         topRatedMovieList = new ArrayList<>();
         upcomingMovieList = new ArrayList<>();
 
-        //Initialize adapters
+
         popularMovieHorizontalAdapter = new MovieHorizontalAdapter(this, popularMovieList);
         trendingMovieHorizontalAdapter = new MovieHorizontalAdapter(this, trendingMovieList);
         topRatedMovieHorizontalAdapter = new MovieHorizontalAdapter(this, topRatedMovieList);
         upcomingMovieHorizontalAdapter = new MovieHorizontalAdapter(this, upcomingMovieList);
 
-        //Define item spacing for RecyclerViews
+
         int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.movie_card_spacing);
         HorizontalSpaceItemDecoration decoration = new HorizontalSpaceItemDecoration(spacingInPixels);
         recyclerViewPopularMovies.addItemDecoration(decoration);
@@ -70,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewTopRatedMovies.addItemDecoration(decoration);
         recyclerViewUpcomingMovies.addItemDecoration(decoration);
 
-        //Set layout managers
+
         recyclerViewPopularMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerViewPopularMovies.setAdapter(popularMovieHorizontalAdapter);
         recyclerViewTrendingMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -89,13 +88,13 @@ public class MainActivity extends AppCompatActivity {
             fetchAllMovies();
         }
 
-        //Fetch movies for each category
+
         fetchPopularMovies();
         fetchTrendingMovies();
         fetchTopRatedMovies();
         fetchUpcomingMovies();
 
-        //Initialize Bottom Navigation
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -115,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadCachedData() {
-        // Load cached data for each category
+
         List<Movie> cachedPopular = preferencesHelper.getCachedMovies("popular");
         List<Movie> cachedTrending = preferencesHelper.getCachedMovies("trending");
         List<Movie> cachedTopRated = preferencesHelper.getCachedMovies("toprated");
@@ -288,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
                     upcomingMovieList.addAll(response.body().getMovies());
                     upcomingMovieHorizontalAdapter.notifyDataSetChanged();
 
-                    // Cache the new data
+
                     preferencesHelper.saveMovies(upcomingMovieList, "upcoming");
                 }
             }
