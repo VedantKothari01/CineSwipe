@@ -81,10 +81,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewUpcomingMovies.setAdapter(upcomingMovieHorizontalAdapter);
 
 
-        // Load cached data first
+
         loadCachedData();
 
-        // Then fetch fresh data if network available
+
         if (isNetworkAvailable()) {
             fetchAllMovies();
         }

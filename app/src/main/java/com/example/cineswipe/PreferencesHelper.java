@@ -45,6 +45,7 @@ public class PreferencesHelper {
                 .apply();
     }
 
+
     public Movie getCachedMovieDetails(String movieId) {
         String movieJson = preferences.getString(KEY_MOVIE_DETAILS + "_" + movieId, null);
         if (movieJson != null) {
@@ -52,6 +53,7 @@ public class PreferencesHelper {
         }
         return null;
     }
+
 
     public boolean isCacheExpired(String category, long expirationTime) {
         long lastUpdateTime = preferences.getLong(KEY_LAST_UPDATE + "_" + category, 0);
