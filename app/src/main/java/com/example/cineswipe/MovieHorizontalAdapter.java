@@ -38,13 +38,12 @@ public class MovieHorizontalAdapter extends RecyclerView.Adapter<MovieHorizontal
         Movie movie = movieList.get(position);
         holder.movieTitle.setText(movie.getTitle());
 
-        // Load the poster image using Glide
+
         Glide.with(context)
                 .load(movie.getPosterUrl())
                 .error(R.drawable.ic_launcher_background)
                 .into(holder.moviePoster);
 
-        // Set click listener to navigate to the detail page
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, MovieDetailActivity.class);
             intent.putExtra("MOVIE_DATA", movie);
@@ -58,7 +57,7 @@ public class MovieHorizontalAdapter extends RecyclerView.Adapter<MovieHorizontal
         return movieList.size();
     }
 
-    //Method to update the movie list using DiffUtil
+
     public void setMovies(List<Movie> newMovies) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new MovieDiffCallback(movieList, newMovies));
         movieList.clear();

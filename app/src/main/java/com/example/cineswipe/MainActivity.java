@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                     trendingMovieList.addAll(response.body().getMovies());
                     trendingMovieHorizontalAdapter.notifyDataSetChanged();
 
-                    // Cache the new data
+
                     preferencesHelper.saveMovies(trendingMovieList, "trending");
                 }
             }
@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
                     topRatedMovieList.addAll(response.body().getMovies());
                     topRatedMovieHorizontalAdapter.notifyDataSetChanged();
 
-                    // Cache the new data
+
                     preferencesHelper.saveMovies(topRatedMovieList, "toprated");
                 }
             }
@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
                 if (!isNetworkAvailable()) {
-                    // Load cached data if available
+
                     List<Movie> cachedMovies = preferencesHelper.getCachedMovies("toprated");
                     if (cachedMovies != null && !cachedMovies.isEmpty()) {
                         topRatedMovieList.clear();
@@ -295,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
                 if (!isNetworkAvailable()) {
-                    // Load cached data if available
                     List<Movie> cachedMovies = preferencesHelper.getCachedMovies("upcoming");
                     if (cachedMovies != null && !cachedMovies.isEmpty()) {
                         upcomingMovieList.clear();
