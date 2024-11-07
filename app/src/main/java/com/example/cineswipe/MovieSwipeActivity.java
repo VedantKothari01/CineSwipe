@@ -1,6 +1,9 @@
 package com.example.cineswipe;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -26,6 +29,7 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
 public class MovieSwipeActivity extends AppCompatActivity implements CardStackListener {
     private static final String TAG = "MovieSwipeActivity";
     private CardStackView cardStackView;
@@ -40,6 +44,10 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     private boolean isLoading = false;
     private List<String> userGenres;
 
+    private PreferencesHelper preferencesHelper;
+    private static final long CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    private boolean isOffline = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +56,16 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         initializeComponents();
         setupCardStackView();
         fetchUserPreferences();
+
+        preferencesHelper = new PreferencesHelper(this);
+
+        // Check for internet connectivity
+        if (isNetworkAvailable()) {
+            isOffline = true;
+            loadCachedMovies();
+        } else {
+            fetchUserPreferences();
+        }
     }
 
     private void initializeComponents() {
@@ -58,7 +76,6 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     }
 
     private void setupCardStackView() {
-
         layoutManager = new CardStackLayoutManager(this, this);
         layoutManager.setSwipeableMethod(SwipeableMethod.AutomaticAndManual);
         layoutManager.setStackFrom(StackFrom.Top);
@@ -111,48 +128,14 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         if (isLoading) return;
         isLoading = true;
 
-        if (genres != null && !genres.isEmpty()) {
-            ApiService apiService = ApiClient.getClient().create(ApiService.class);
-            Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, String.join(",", genres), page);
-
-            call.enqueue(new Callback<MovieResponse>() {
-                @Override
-                public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
-                    isLoading = false;
-                    if (response.isSuccessful() && response.body() != null) {
-                        List<Movie> movies = response.body().getMovies();
-                        if (isLoadingMore) {
-                            adapter.addMovies(movies);
-                        } else {
-                            adapter.setMovies(movies);
-                        }
-                        Log.d(TAG, "Fetched " + movies.size() + " movies by genres for page " + page);
-                    } else {
-                        Log.e(TAG, "Response unsuccessful: " + response.message());
-                        if (!isLoadingMore) {
-                            fetchPopularMovies(page, false);
-                        }
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<MovieResponse> call, Throwable t) {
-                    isLoading = false;
-                    Log.e(TAG, "API call failed: " + t.getMessage());
-                    if (!isLoadingMore) {
-                        fetchPopularMovies(page, false);
-                    }
-                }
-            });
+        if (isNetworkAvailable()) {
+            loadCachedMovies();
+            isLoading = false;
+            return;
         }
-    }
-
-    private void fetchPopularMovies(int page, boolean isLoadingMore) {
-        if (isLoading) return;
-        isLoading = true;
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", page);
+        Call<MovieResponse> call = apiService.getMoviesByGenres(API_KEY, String.join(",", genres), page);
 
         call.enqueue(new Callback<MovieResponse>() {
             @Override
@@ -164,30 +147,36 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
                         adapter.addMovies(movies);
                     } else {
                         adapter.setMovies(movies);
+                        // Cache the movies
+                        preferencesHelper.saveMovies(movies, "popular");
                     }
-                    Log.d(TAG, "Fetched " + movies.size() + " popular movies for page " + page);
-                } else {
-                    Log.e(TAG, "Response unsuccessful: " + response.message());
-                    showError("Failed to load movies");
                 }
             }
 
             @Override
             public void onFailure(Call<MovieResponse> call, Throwable t) {
                 isLoading = false;
-                Log.e(TAG, "API call failed: " + t.getMessage());
-                showError("Network error: " + t.getMessage());
+                if (isNetworkAvailable()) {
+                    loadCachedMovies();
+                }
             }
         });
     }
 
-    private void loadMoreMovies() {
-        currentPage++;
-        if (userGenres != null && !userGenres.isEmpty()) {
-            fetchMoviesByGenres(userGenres, currentPage, true);
+    private void loadCachedMovies() {
+        List<Movie> cachedMovies = preferencesHelper.getCachedMovies("popular");
+        if (cachedMovies != null && !cachedMovies.isEmpty()) {
+            adapter.setMovies(cachedMovies);
+            Toast.makeText(this, "Showing cached movies (offline mode)", Toast.LENGTH_SHORT).show();
         } else {
-            fetchPopularMovies(currentPage, true);
+            Toast.makeText(this, "No cached movies available", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo == null || !activeNetworkInfo.isConnected();
     }
 
     private void handleUserNotLoggedIn() {
@@ -200,7 +189,7 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    //CardStackListener implementation
+    // CardStackListener implementation
     @Override
     public void onCardDragging(Direction direction, float ratio) {
         Log.d(TAG, "onCardDragging: d=" + direction.name() + " ratio=" + ratio);
@@ -211,29 +200,27 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
         Log.d(TAG, "onCardSwiped: p=" + layoutManager.getTopPosition() + " d=" + direction);
 
         if (direction == Direction.Right) {
-            int currentMovieIndex = layoutManager.getTopPosition() - 1; // Get the current movie index
+            int currentMovieIndex = layoutManager.getTopPosition() - 1;
             if (currentMovieIndex >= 0 && currentMovieIndex < adapter.getItemCount()) {
                 Movie likedMovie = adapter.getMovieAt(currentMovieIndex);
-                likedMovies.add(likedMovie); // Add the liked movie to the list
-                saveLikedMovie(likedMovie); // Call a method to save the liked movie
+                likedMovies.add(likedMovie);
+                saveLikedMovie(likedMovie);
                 Toast.makeText(this, "Liked!", Toast.LENGTH_SHORT).show();
             }
         } else if (direction == Direction.Left) {
             Toast.makeText(this, "Passed", Toast.LENGTH_SHORT).show();
         }
 
-        //Load more movies when reaching the end
+        // Load more movies when reaching the end
         if (layoutManager.getTopPosition() >= adapter.getItemCount() - 5) {
             loadMoreMovies();
         }
     }
 
     private void saveLikedMovie(Movie movie) {
-        //Save the liked movie to Firestore
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(userId)
-                .update("likedMovies", FieldValue.arrayUnion(movie.getId())) // Store movie ID
+                .update("likedMovies", FieldValue.arrayUnion(movie.getId()))
                 .addOnSuccessListener(aVoid -> Log.d(TAG, "Liked movie added successfully"))
                 .addOnFailureListener(e -> Log.e(TAG, "Error adding liked movie", e));
     }
@@ -256,5 +243,52 @@ public class MovieSwipeActivity extends AppCompatActivity implements CardStackLi
     @Override
     public void onCardDisappeared(View view, int position) {
         Log.d(TAG, "onCardDisappeared: " + position);
+    }
+
+    private void loadMoreMovies() {
+        currentPage++;
+        if (userGenres != null && !userGenres.isEmpty()) {
+            fetchMoviesByGenres(userGenres, currentPage, true);
+        } else {
+            fetchPopularMovies(currentPage, true);
+        }
+    }
+
+    private void fetchPopularMovies(int page, boolean isLoadingMore) {
+        if (isLoading) return;
+        isLoading = true;
+
+        if (isNetworkAvailable()) {
+            loadCachedMovies();
+            isLoading = false;
+            return;
+        }
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY, "en-US", page);
+
+        call.enqueue(new Callback<MovieResponse>() {
+            @Override
+            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                isLoading = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Movie> movies = response.body().getMovies();
+                    if (isLoadingMore) {
+                        adapter.addMovies(movies);
+                    } else {
+                        adapter.setMovies(movies);
+                        preferencesHelper.saveMovies(movies, "popular");
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MovieResponse> call, Throwable t) {
+                isLoading = false;
+                if (isNetworkAvailable()) {
+                    loadCachedMovies();
+                }
+            }
+        });
     }
 }

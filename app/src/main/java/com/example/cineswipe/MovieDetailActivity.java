@@ -14,13 +14,14 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import java.util.List;
 import java.util.stream.Collectors;
-
 public class MovieDetailActivity extends AppCompatActivity {
     private static final String API_KEY = Constants.API_KEY;
+    private static final long CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     private ApiService apiService;
     private ProgressBar progressBar;
     private View contentLayout;
     private Movie currentMovie;
+    private PreferencesHelper preferencesHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +30,7 @@ public class MovieDetailActivity extends AppCompatActivity {
 
         progressBar = findViewById(R.id.progressBar);
         contentLayout = findViewById(R.id.contentLayout);
+        preferencesHelper = new PreferencesHelper(this);
 
         Intent intent = getIntent();
         currentMovie = (Movie) intent.getSerializableExtra("MOVIE_DATA");
@@ -39,11 +41,19 @@ public class MovieDetailActivity extends AppCompatActivity {
 
             apiService = ApiClient.getClient().create(ApiService.class);
 
-            //Fetch complete movie details
-            fetchMovieDetails(currentMovie.getId());
-
-            //Fetch cast separately
-            fetchMovieCredits(currentMovie.getId());
+            // Check if movie details are cached
+            Movie cachedMovie = preferencesHelper.getCachedMovieDetails(currentMovie.getId());
+            if (cachedMovie != null && preferencesHelper.isCacheExpired(currentMovie.getId(), CACHE_EXPIRATION)) {
+                currentMovie = cachedMovie;
+                updateUI(currentMovie);
+                progressBar.setVisibility(View.GONE);
+                contentLayout.setVisibility(View.VISIBLE);
+            } else {
+                // Fetch complete movie details
+                fetchMovieDetails(currentMovie.getId());
+                // Fetch cast separately
+                fetchMovieCredits(currentMovie.getId());
+            }
         }
     }
 
@@ -59,6 +69,8 @@ public class MovieDetailActivity extends AppCompatActivity {
             public void onResponse(Call<Movie> call, Response<Movie> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     currentMovie = response.body();
+                    // Cache the movie details
+                    preferencesHelper.saveMovieDetails(currentMovie);
                     updateUI(currentMovie);
                 }
                 progressBar.setVisibility(View.GONE);
@@ -67,7 +79,6 @@ public class MovieDetailActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Movie> call, Throwable t) {
-
                 progressBar.setVisibility(View.GONE);
                 contentLayout.setVisibility(View.VISIBLE);
             }
@@ -109,7 +120,6 @@ public class MovieDetailActivity extends AppCompatActivity {
     }
 
     private void updateUI(Movie movie) {
-
         ImageView backdropImageView = findViewById(R.id.backdropImageView);
         if (movie.getBackdropUrl() != null) {
             Glide.with(this)

@@ -1,6 +1,8 @@
 package com.example.cineswipe;
 
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -21,6 +23,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerViewPopularMovies, recyclerViewTrendingMovies, recyclerViewTopRatedMovies, recyclerViewUpcomingMovies;
     private MovieHorizontalAdapter popularMovieHorizontalAdapter, trendingMovieHorizontalAdapter, topRatedMovieHorizontalAdapter, upcomingMovieHorizontalAdapter;
     private List<Movie> popularMovieList, trendingMovieList, topRatedMovieList, upcomingMovieList;
+    private PreferencesHelper preferencesHelper;
+    private static final long CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
+
+        preferencesHelper = new PreferencesHelper(this);
 
         setContentView(R.layout.activity_main);
 
@@ -74,6 +80,15 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewUpcomingMovies.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerViewUpcomingMovies.setAdapter(upcomingMovieHorizontalAdapter);
 
+
+        // Load cached data first
+        loadCachedData();
+
+        // Then fetch fresh data if network available
+        if (isNetworkAvailable()) {
+            fetchAllMovies();
+        }
+
         //Fetch movies for each category
         fetchPopularMovies();
         fetchTrendingMovies();
@@ -99,6 +114,49 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void loadCachedData() {
+        // Load cached data for each category
+        List<Movie> cachedPopular = preferencesHelper.getCachedMovies("popular");
+        List<Movie> cachedTrending = preferencesHelper.getCachedMovies("trending");
+        List<Movie> cachedTopRated = preferencesHelper.getCachedMovies("toprated");
+        List<Movie> cachedUpcoming = preferencesHelper.getCachedMovies("upcoming");
+
+        if (cachedPopular != null && !cachedPopular.isEmpty() && preferencesHelper.isCacheExpired("popular", CACHE_EXPIRATION)) {
+            popularMovieList.clear();
+            popularMovieList.addAll(cachedPopular);
+            popularMovieHorizontalAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Showing cached popular movies", Toast.LENGTH_SHORT).show();
+        }
+
+        if (cachedTrending != null && !cachedTrending.isEmpty() && preferencesHelper.isCacheExpired("trending", CACHE_EXPIRATION)) {
+            trendingMovieList.clear();
+            trendingMovieList.addAll(cachedTrending);
+            trendingMovieHorizontalAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Showing cached trending movies", Toast.LENGTH_SHORT).show();
+        }
+
+        if (cachedTopRated != null && !cachedTopRated.isEmpty() && preferencesHelper.isCacheExpired("toprated", CACHE_EXPIRATION)) {
+            topRatedMovieList.clear();
+            topRatedMovieList.addAll(cachedTopRated);
+            topRatedMovieHorizontalAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Showing cached top-rated movies", Toast.LENGTH_SHORT).show();
+        }
+
+        if (cachedUpcoming != null && !cachedUpcoming.isEmpty() && preferencesHelper.isCacheExpired("upcoming", CACHE_EXPIRATION)) {
+            upcomingMovieList.clear();
+            upcomingMovieList.addAll(cachedUpcoming);
+            upcomingMovieHorizontalAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Showing cached upcoming movies", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void fetchAllMovies() {
+        fetchPopularMovies();
+        fetchTrendingMovies();
+        fetchTopRatedMovies();
+        fetchUpcomingMovies();
+    }
+
     private void fetchPopularMovies() {
         String apiKey = Constants.API_KEY;
         String language = "en-US";
@@ -112,14 +170,28 @@ public class MainActivity extends AppCompatActivity {
                     popularMovieList.clear();
                     popularMovieList.addAll(response.body().getMovies());
                     popularMovieHorizontalAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch popular movies", Toast.LENGTH_SHORT).show();
+
+                    // Cache the new data
+                    preferencesHelper.saveMovies(popularMovieList, "popular");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (!isNetworkAvailable()) {
+                    // Load cached data if available
+                    List<Movie> cachedMovies = preferencesHelper.getCachedMovies("popular");
+                    if (cachedMovies != null && !cachedMovies.isEmpty()) {
+                        popularMovieList.clear();
+                        popularMovieList.addAll(cachedMovies);
+                        popularMovieHorizontalAdapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Showing cached popular movies", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "No cached popular movies available", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -137,14 +209,28 @@ public class MainActivity extends AppCompatActivity {
                     trendingMovieList.clear();
                     trendingMovieList.addAll(response.body().getMovies());
                     trendingMovieHorizontalAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch trending movies", Toast.LENGTH_SHORT).show();
+
+                    // Cache the new data
+                    preferencesHelper.saveMovies(trendingMovieList, "trending");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (!isNetworkAvailable()) {
+                    // Load cached data if available
+                    List<Movie> cachedMovies = preferencesHelper.getCachedMovies("trending");
+                    if (cachedMovies != null && !cachedMovies.isEmpty()) {
+                        trendingMovieList.clear();
+                        trendingMovieList.addAll(cachedMovies);
+                        trendingMovieHorizontalAdapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Showing cached trending movies", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "No cached trending movies available", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -162,14 +248,28 @@ public class MainActivity extends AppCompatActivity {
                     topRatedMovieList.clear();
                     topRatedMovieList.addAll(response.body().getMovies());
                     topRatedMovieHorizontalAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch top-rated movies", Toast.LENGTH_SHORT).show();
+
+                    // Cache the new data
+                    preferencesHelper.saveMovies(topRatedMovieList, "toprated");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (!isNetworkAvailable()) {
+                    // Load cached data if available
+                    List<Movie> cachedMovies = preferencesHelper.getCachedMovies("toprated");
+                    if (cachedMovies != null && !cachedMovies.isEmpty()) {
+                        topRatedMovieList.clear();
+                        topRatedMovieList.addAll(cachedMovies);
+                        topRatedMovieHorizontalAdapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Showing cached top-rated movies", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "No cached top-rated movies available", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -187,15 +287,35 @@ public class MainActivity extends AppCompatActivity {
                     upcomingMovieList.clear();
                     upcomingMovieList.addAll(response.body().getMovies());
                     upcomingMovieHorizontalAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch upcoming movies", Toast.LENGTH_SHORT).show();
+
+                    // Cache the new data
+                    preferencesHelper.saveMovies(upcomingMovieList, "upcoming");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (!isNetworkAvailable()) {
+                    // Load cached data if available
+                    List<Movie> cachedMovies = preferencesHelper.getCachedMovies("upcoming");
+                    if (cachedMovies != null && !cachedMovies.isEmpty()) {
+                        upcomingMovieList.clear();
+                        upcomingMovieList.addAll(cachedMovies);
+                        upcomingMovieHorizontalAdapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Showing cached upcoming movies", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "No cached upcoming movies available", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }
